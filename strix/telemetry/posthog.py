@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import urllib.request
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_POSTHOG_PUBLIC_API_KEY = "__POSTHOG_KEY_REMOVED__"
+_POSTHOG_PUBLIC_API_KEY = os.environ.get("POSTHOG_PUBLIC_API_KEY", "")
 _POSTHOG_HOST = "https://us.i.posthog.com"
 
 
