@@ -1,6 +1,6 @@
 # UNKNOWNS_SOC — SOC unknowns registry
 
-**Updated:** YYYY-MM-DD · **Maintained by:** soc-bootstrap / soc-assessment
+**Updated:** 2026-06-30 · **Maintained by:** soc-bootstrap / soc-assessment
 
 | ID | Question / blocker | Blocks | Owner | Status |
 |----|-------------------|--------|-------|--------|
@@ -9,5 +9,5 @@
 ## Review log
 
 | Date | Reviewer | Action |
-|------|----------|--------|
-| YYYY-MM-DD | bootstrap | Initial template |
+|------|---------|--------|
+| 2026-06-30 | bootstrap | Initial template |

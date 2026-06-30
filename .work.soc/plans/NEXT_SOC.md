@@ -6,7 +6,7 @@
 1. [DONE] Review license analysis: .work.soc/analysis/20260629-STRIX-to-AI-SOC-LICENSE-ANALYSIS.md
 2. [DONE] Branding migration: pyproject.toml, README, .cursorrules, logos, docs
 3. [NEXT] Address path rebasin for opencode.json / .cursorrules (replace /mnt/work/Project/ with {WORK_ROOT})
-4. [NEXT] Register `.ai.soc` skills with `opencode.json` and `.cursorrules` frameworks section
+4. [DONE] Register `.ai.soc` skills with `opencode.json` and `.cursorrules` frameworks section
 5. [NEXT] Optionally rename Python module `strix/` → `soc/` (requires import refactoring — see analysis §7)
 ```
 
@@ -19,7 +19,7 @@
 | SOC-003 | NOTICE file + modification notices on all changed files | DONE |
 | SOC-004 | Bootstrap templates for `.work.soc/` structure | DONE |
 | SOC-005 | Path templating for portable `.ai.soc` framework | PENDING |
-| SOC-006 | Register `.ai.soc` skills with `opencode.json` | PENDING |
+| SOC-006 | Register `.ai.soc` skills with `opencode.json` | DONE |
 
 ## Completed work
 
@@ -34,6 +34,7 @@
 | Gateway script | `gateway.sh` APP renamed, env vars preserved; `scripts/install.sh` removed (not needed — install via `uv sync`) |
 | Templates | `templates/work/` + `templates/bootstrap.sh` created |
 | Modification notices | Added to every changed file; `NOTICE` lists all modifications |
+| session-soc skill | `skills/session-soc/skill.md` created; `.cursorrules` SOC section updated |
 
 ## What was intentionally NOT changed
 
