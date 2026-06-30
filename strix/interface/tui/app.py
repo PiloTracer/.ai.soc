@@ -1,3 +1,5 @@
+# Modified from Strix original. See NOTICE and LICENSE for details.
+
 import argparse
 import asyncio
 import atexit
@@ -48,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 def get_package_version() -> str:
     try:
-        return pkg_version("strix-agent")
+        return pkg_version("ai-soc")
     except PackageNotFoundError:
         return "dev"
 
@@ -160,11 +162,11 @@ class SplashScreen(Static):  # type: ignore[misc]
         return Panel.fit(content, border_style=self.PRIMARY_GREEN, padding=(1, 6))
 
     def _build_url_text(self) -> Text:
-        return Text("strix.ai", style=Style(color=self.PRIMARY_GREEN, bold=True))
+        return Text("Security OS", style=Style(color=self.PRIMARY_GREEN, bold=True))
 
     def _build_welcome_text(self) -> Text:
         text = Text("Welcome to ", style=Style(color="white", bold=True))
-        text.append("Strix", style=Style(color=self.PRIMARY_GREEN, bold=True))
+        text.append(".ai.soc", style=Style(color=self.PRIMARY_GREEN, bold=True))
         text.append("!", style=Style(color="white", bold=True))
         return text
 
@@ -863,7 +865,7 @@ class StrixTUIApp(App):  # type: ignore[misc]
             self.call_after_refresh(self._focus_agents_tree)
 
     def on_mount(self) -> None:
-        self.title = "strix"
+        self.title = ".ai.soc"
 
         self.set_timer(4.5, self._hide_splash_screen)
 

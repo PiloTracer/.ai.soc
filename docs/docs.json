@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "maple",
-  "name": "Strix",
+  "name": ".ai.soc",
   "colors": {
     "primary": "#000000",
     "light": "#ffffff",
@@ -73,7 +73,7 @@
         "tab": "Cloud",
         "groups": [
           {
-            "group": "Strix Cloud",
+            "group": ".ai.soc Cloud",
             "pages": [
               "cloud/overview"
             ]
@@ -85,7 +85,7 @@
       "anchors": [
         {
           "anchor": "GitHub",
-          "href": "https://github.com/usestrix/strix",
+          "href": "<your-repo>",
           "icon": "github"
         },
         {
@@ -100,7 +100,7 @@
     "links": [],
     "primary": {
       "type": "button",
-      "label": "Try Strix Cloud",
+      "label": "Try .ai.soc Cloud",
       "href": "https://app.strix.ai"
     }
   },

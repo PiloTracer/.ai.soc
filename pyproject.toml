@@ -1,12 +1,15 @@
+# Modified from Strix original. See NOTICE and LICENSE for details.
+
 [project]
-name = "strix-agent"
+name = "ai-soc"
 version = "1.0.4"
-description = "Open-source AI Hackers for your apps"
+description = "Security OS — autonomous AI security testing framework"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.12"
 authors = [
   { name = "Strix", email = "hi@usestrix.com" },
+  { name = ".ai.soc Contributors" },
 ]
 keywords = [
   "cybersecurity",
@@ -45,6 +48,7 @@ dependencies = [
 ]
 
 [project.scripts]
+soc = "strix.interface.main:main"
 strix = "strix.interface.main:main"
 
 [dependency-groups]

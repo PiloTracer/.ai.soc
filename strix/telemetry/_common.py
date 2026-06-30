@@ -1,3 +1,5 @@
+# Modified from Strix original. See NOTICE and LICENSE for details.
+
 from __future__ import annotations
 
 import logging
@@ -18,9 +20,9 @@ _FIRST_RUN_CACHED: bool | None = None
 
 def get_version() -> str:
     try:
-        return version("strix-agent")
+        return version("ai-soc")
     except PackageNotFoundError:
-        logger.debug("strix-agent version lookup failed", exc_info=True)
+        logger.debug("ai-soc version lookup failed", exc_info=True)
         return "unknown"
 
 

@@ -1,0 +1,29 @@
+NOTICE
+======
+
+.ai.soc — Security Operations Center framework
+Copyright 2026 <Your Name / Organization>
+
+Derived from Strix (https://github.com/usestrix/strix)
+Copyright 2025 OmniSecure Inc.
+
+This product includes software developed by OmniSecure Inc. and contributors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
+============================================================================
+
+Modifications to the original Strix source:
+
+- Project renamed from "strix-agent" to "ai-soc" (pyproject.toml, uv.lock)
+- CLI entry point renamed from "strix" to "soc" (pyproject.toml, main.py, app.py)
+- Package version lookup updated from "strix-agent" to "ai-soc" (main.py, app.py, _common.py)
+- All branding and identity references updated to ".ai.soc" (.cursorrules, README, docs/*.mdx)
+- CLI description and help examples rebranded (main.py)
+- Strix logos and trademarks removed; custom SOC branding required
+- License analysis and compliance documentation added under .work.soc/
+- Bootstrap templates for .work.soc/ structure added under templates/
+
+See .work.soc/analysis/20260629-STRIX-to-AI-SOC-LICENSE-ANALYSIS.md for the
+full compliance audit and migration checklist.

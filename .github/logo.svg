@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60">
+  <rect width="200" height="60" fill="#1a1a2e" rx="8"/>
+  <text x="100" y="36" font-family="monospace" font-size="18" fill="#00ff88" text-anchor="middle" font-weight="bold">.ai.soc</text>
+  <text x="100" y="52" font-family="monospace" font-size="10" fill="#666" text-anchor="middle">Security OS</text>
+</svg>

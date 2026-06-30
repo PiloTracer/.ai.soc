@@ -1,9 +1,10 @@
+<!-- Modified from Strix original. See NOTICE and LICENSE for details. -->
 ---
 title: "Configuration"
-description: "Environment variables for Strix"
+description: "Environment variables for .ai.soc"
 ---
 
-Configure Strix using environment variables or a config file.
+Configure .ai.soc using environment variables or a config file.
 
 ## LLM Configuration
 
@@ -31,7 +32,7 @@ Configure Strix using environment variables or a config file.
   Control thinking effort for reasoning models. Valid values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`. Defaults to `medium` for quick scan mode.
 </ParamField>
 
-<ParamField path="STRIX_MEMORY_COMPRESSOR_TIMEOUT" default="30" type="integer">
+<ParamField path="SOC_MEMORY_COMPRESSOR_TIMEOUT" default="30" type="integer">
   Timeout in seconds for memory compression operations (context summarization).
 </ParamField>
 
@@ -46,7 +47,7 @@ Configure Strix using environment variables or a config file.
 </ParamField>
 
 <ParamField path="TRACELOOP_BASE_URL" type="string">
-  OTLP/Traceloop base URL for remote OpenTelemetry export. If unset, Strix keeps traces local only.
+  OTLP/Traceloop base URL for remote OpenTelemetry export. If unset, .ai.soc keeps traces local only.
 </ParamField>
 
 <ParamField path="TRACELOOP_API_KEY" type="string">
@@ -57,13 +58,13 @@ Configure Strix using environment variables or a config file.
   Optional custom OTEL headers (JSON object or `key=value,key2=value2`). Useful for Langfuse or custom/self-hosted OTLP gateways.
 </ParamField>
 
-When remote OTEL vars are not set, Strix still writes complete run telemetry locally to:
+When remote OTEL vars are not set, .ai.soc still writes complete run telemetry locally to:
 
 ```bash
 strix_runs/<run_name>/events.jsonl
 ```
 
-When remote vars are set, Strix dual-writes telemetry to both local JSONL and the remote OTEL endpoint.
+When remote vars are set, .ai.soc dual-writes telemetry to both local JSONL and the remote OTEL endpoint.
 
 ## Docker Configuration
 
@@ -80,25 +81,25 @@ When remote vars are set, Strix dual-writes telemetry to both local JSONL and th
 </ParamField>
 
 <ParamField path="STRIX_MAX_LOCAL_COPY_MB" default="1024" type="integer">
-  Maximum size (in MB) of a local directory target that Strix will copy into the sandbox file-by-file. Larger targets exit early with a suggestion to use `--mount` instead. Set to `0` to disable the check.
+  Maximum size (in MB) of a local directory target that .ai.soc will copy into the sandbox file-by-file. Larger targets exit early with a suggestion to use `--mount` instead. Set to `0` to disable the check.
 </ParamField>
 
 ## Sandbox Configuration
 
-<ParamField path="STRIX_SANDBOX_EXECUTION_TIMEOUT" default="120" type="integer">
+<ParamField path="SOC_SANDBOX_EXECUTION_TIMEOUT" default="120" type="integer">
   Maximum execution time in seconds for sandbox operations.
 </ParamField>
 
-<ParamField path="STRIX_SANDBOX_CONNECT_TIMEOUT" default="10" type="integer">
+<ParamField path="SOC_SANDBOX_CONNECT_TIMEOUT" default="10" type="integer">
   Timeout in seconds for connecting to the sandbox container.
 </ParamField>
 
 ## Config File
 
-Strix stores configuration in `~/.strix/cli-config.json`. You can also specify a custom config file:
+.ai.soc stores configuration in `~/.strix/cli-config.json`. You can also specify a custom config file:
 
 ```bash
-strix --target ./app --config /path/to/config.json
+soc --target ./app --config /path/to/config.json
 ```
 
 **Config file format:**
@@ -125,6 +126,6 @@ export PERPLEXITY_API_KEY="pplx-..."
 
 # Optional: Custom timeouts
 export LLM_TIMEOUT="600"
-export STRIX_SANDBOX_EXECUTION_TIMEOUT="300"
+export SOC_SANDBOX_EXECUTION_TIMEOUT="300"
 
 ```

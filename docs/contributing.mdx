@@ -1,6 +1,7 @@
+<!-- Modified from Strix original. See NOTICE and LICENSE for details. -->
 ---
 title: "Contributing"
-description: "Contribute to Strix development"
+description: "Contribute to .ai.soc development"
 ---
 
 ## Development Setup
@@ -17,8 +18,8 @@ description: "Contribute to Strix development"
 <Steps>
   <Step title="Clone the repository">
     ```bash
-    git clone https://github.com/usestrix/strix.git
-    cd strix
+    git clone <your-repo>.git
+    cd .ai.soc
     ```
   </Step>
   <Step title="Install dependencies">
@@ -36,16 +37,16 @@ description: "Contribute to Strix development"
     export LLM_API_KEY="your-api-key"
     ```
   </Step>
-  <Step title="Run Strix">
+  <Step title="Run .ai.soc">
     ```bash
-    uv run strix --target https://example.com
+    uv run soc --target https://example.com
     ```
   </Step>
 </Steps>
 
 ## Contributing Skills
 
-Skills are specialized knowledge packages that enhance agent capabilities. They live in `strix/skills/`
+Skills are specialized knowledge packages that enhance agent capabilities. They live in `soc/skills/`
 
 ### Creating a Skill
 
@@ -79,7 +80,7 @@ Skills are specialized knowledge packages that enhance agent capabilities. They 
 Include:
 
 - Python version and OS
-- Strix version (`strix --version`)
+- .ai.soc version (`soc --version`)
 - LLM being used
 - Full error traceback
 - Steps to reproduce
@@ -90,7 +91,7 @@ Include:
   <Card title="Discord" icon="discord" href="https://discord.gg/strix-ai">
     Join the community for help and discussion.
   </Card>
-  <Card title="GitHub Issues" icon="github" href="https://github.com/usestrix/strix/issues">
+  <Card title="GitHub Issues" icon="github" href="<your-repo>/issues">
     Report bugs and request features.
   </Card>
 </CardGroup>

@@ -3,6 +3,8 @@
 Strix Agent Interface
 """
 
+# Modified from Strix original. See NOTICE and LICENSE for details.
+
 import argparse
 import asyncio
 import shutil
@@ -27,7 +29,7 @@ from strix.config.models import (
     configure_sdk_model_defaults,
     is_known_openai_bare_model,
 )
-from strix.core.paths import run_dir_for, runtime_state_dir
+from strix.core.paths import run_dir_for, runtime_state_dir, set_output_dir
 from strix.interface.cli import run_cli
 from strix.interface.tui import run_tui
 from strix.interface.utils import (
@@ -172,7 +174,7 @@ def validate_environment() -> None:
 
         panel = Panel(
             error_text,
-            title="[bold white]STRIX",
+            title="[bold white].ai.soc",
             title_align="left",
             border_style="red",
             padding=(1, 2),
@@ -203,7 +205,7 @@ def check_docker_installed() -> None:
 
         panel = Panel(
             error_text,
-            title="[bold white]STRIX",
+            title="[bold white].ai.soc",
             title_align="left",
             border_style="red",
             padding=(1, 2),
@@ -246,7 +248,7 @@ async def warm_up_llm() -> None:
             console.print(
                 Panel(
                     warn_text,
-                    title="[bold white]STRIX",
+                    title="[bold white].ai.soc",
                     title_align="left",
                     border_style="yellow",
                     padding=(1, 2),
@@ -283,7 +285,7 @@ async def warm_up_llm() -> None:
 
         panel = Panel(
             error_text,
-            title="[bold white]STRIX",
+            title="[bold white].ai.soc",
             title_align="left",
             border_style="red",
             padding=(1, 2),
@@ -299,7 +301,7 @@ def get_version() -> str:
     try:
         from importlib.metadata import version
 
-        return version("strix-agent")
+        return version("ai-soc")
     except Exception:
         return "unknown"
 
@@ -317,39 +319,39 @@ def _positive_budget(value: str) -> float:
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Strix Multi-Agent Cybersecurity Penetration Testing Tool",
+        description=".ai.soc — Security OS: autonomous AI security testing framework",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Web application penetration test
-  strix --target https://example.com
+  soc --target https://example.com
 
   # GitHub repository analysis
-  strix --target https://github.com/user/repo
-  strix --target git@github.com:user/repo.git
+  soc --target https://github.com/user/repo
+  soc --target git@github.com:user/repo.git
 
   # Local code analysis
-  strix --target ./my-project
+  soc --target ./my-project
 
   # Large local repository (bind-mounted read-only instead of copied)
-  strix --mount ./huge-monorepo
+  soc --mount ./huge-monorepo
 
   # Domain penetration test
-  strix --target example.com
+  soc --target example.com
 
   # IP address penetration test
-  strix --target 192.168.1.42
+  soc --target 192.168.1.42
 
   # Multiple targets (e.g., white-box testing with source and deployed app)
-  strix --target https://github.com/user/repo --target https://example.com
-  strix --target ./my-project --target https://staging.example.com --target https://prod.example.com
+  soc --target https://github.com/user/repo --target https://example.com
+  soc --target ./my-project --target https://staging.example.com --target https://prod.example.com
 
   # Custom instructions (inline)
-  strix --target example.com --instruction "Focus on authentication vulnerabilities"
+  soc --target example.com --instruction "Focus on authentication vulnerabilities"
 
   # Custom instructions (from file)
-  strix --target example.com --instruction-file ./instructions.txt
-  strix --target https://app.com --instruction-file /path/to/detailed_instructions.md
+  soc --target example.com --instruction-file ./instructions.txt
+  soc --target https://app.com --instruction-file /path/to/detailed_instructions.md
         """,
     )
 
@@ -357,7 +359,7 @@ Examples:
         "-v",
         "--version",
         action="version",
-        version=f"strix {get_version()}",
+        version=f"soc {get_version()}",
     )
 
     parser.add_argument(
@@ -448,6 +450,16 @@ Examples:
         "--config",
         type=str,
         help="Path to a custom config file (JSON) to use instead of ~/.strix/cli-config.json",
+    )
+
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        metavar="DIR",
+        help=(
+            "Base directory for run output. Reports and run state are written to "
+            "<output-dir>/strix_runs/<run-name>/ instead of ./strix_runs/<run-name>/."
+        ),
     )
 
     parser.add_argument(
@@ -670,7 +682,7 @@ def display_completion_message(args: argparse.Namespace, results_path: Path) -> 
 
     panel = Panel(
         panel_content,
-        title="[bold white]STRIX",
+        title="[bold white].ai.soc",
         title_align="left",
         border_style=border_style,
         padding=(1, 2),
@@ -679,11 +691,7 @@ def display_completion_message(args: argparse.Namespace, results_path: Path) -> 
     console.print("\n")
     console.print(panel)
     console.print()
-    console.print(
-        "[#60a5fa]strix.ai[/]  [dim]·[/]  "
-        "[#60a5fa]docs.strix.ai[/]  [dim]·[/]  "
-        "[#60a5fa]discord.gg/strix-ai[/]"
-    )
+    console.print("[dim].ai.soc — Security OS[/]")
     console.print()
 
 
@@ -722,7 +730,7 @@ def pull_docker_image() -> None:
 
             panel = Panel(
                 error_text,
-                title="[bold white]STRIX",
+                title="[bold white].ai.soc",
                 title_align="left",
                 border_style="red",
                 padding=(1, 2),
@@ -747,6 +755,11 @@ def main() -> None:
 
     if args.config:
         apply_config_override(validate_config_file(args.config))
+
+    if args.output_dir:
+        out = Path(args.output_dir).resolve()
+        out.mkdir(parents=True, exist_ok=True)
+        set_output_dir(out)
 
     check_docker_installed()
     pull_docker_image()
@@ -783,7 +796,7 @@ def main() -> None:
 
             panel = Panel(
                 error_text,
-                title="[bold white]STRIX",
+                title="[bold white].ai.soc",
                 title_align="left",
                 border_style="red",
                 padding=(1, 2),

@@ -1,22 +1,23 @@
+<!-- Modified from Strix original. See NOTICE and LICENSE for details. -->
 ---
 title: "CI/CD Integration"
-description: "Run Strix in any CI/CD pipeline"
+description: "Run .ai.soc in any CI/CD pipeline"
 ---
 
-Strix runs in headless mode for automated pipelines.
+.ai.soc runs in headless mode for automated pipelines.
 
 ## Headless Mode
 
 Use the `-n` or `--non-interactive` flag:
 
 ```bash
-strix -n --target ./app --scan-mode quick
+soc -n --target ./app --scan-mode quick
 ```
 
-For pull-request style CI runs, Strix automatically scopes quick scans to changed files. You can force this behavior and set a base ref explicitly:
+For pull-request style CI runs, .ai.soc automatically scopes quick scans to changed files. You can force this behavior and set a base ref explicitly:
 
 ```bash
-strix -n --target ./app --scan-mode quick --scope-mode diff --diff-base origin/main
+soc -n --target ./app --scan-mode quick --scope-mode diff --diff-base origin/main
 ```
 
 ## Exit Codes
@@ -39,7 +40,7 @@ security-scan:
     LLM_API_KEY: $LLM_API_KEY
   script:
     - curl -sSL https://strix.ai/install | bash
-    - strix -n -t ./ --scan-mode quick
+    - soc -n -t ./ --scan-mode quick
 ```
 
 ## Jenkins
@@ -48,14 +49,14 @@ security-scan:
 pipeline {
     agent any
     environment {
-        STRIX_LLM = credentials('strix-llm')
+        STRIX_LLM = credentials('soc-llm')
         LLM_API_KEY = credentials('llm-api-key')
     }
     stages {
         stage('Security Scan') {
             steps {
                 sh 'curl -sSL https://strix.ai/install | bash'
-                sh 'strix -n -t ./ --scan-mode quick'
+                sh 'soc -n -t ./ --scan-mode quick'
             }
         }
     }
@@ -74,11 +75,11 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          name: Install Strix
+          name: Install .ai.soc
           command: curl -sSL https://strix.ai/install | bash
       - run:
           name: Run Scan
-          command: strix -n -t ./ --scan-mode quick
+          command: soc -n -t ./ --scan-mode quick
 ```
 
 <Note>

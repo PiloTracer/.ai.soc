@@ -1,12 +1,13 @@
+<!-- Modified from Strix original. See NOTICE and LICENSE for details. -->
 ---
 title: "CLI Reference"
-description: "Command-line options for Strix"
+description: "Command-line options for .ai.soc"
 ---
 
 ## Basic Usage
 
 ```bash
-strix --target <target> [options]
+soc --target <target> [options]
 ```
 
 ## Options
@@ -18,7 +19,7 @@ strix --target <target> [options]
 <ParamField path="--mount" type="string">
   Bind-mount a local directory into the sandbox (read-only) instead of copying it in file-by-file. Use this for large repositories that are too big to stream into the container. Can be specified multiple times.
 
-  Strix copies local `--target` directories into the sandbox one file at a time, which stalls on very large trees. When a local target exceeds the copy limit (see `STRIX_MAX_LOCAL_COPY_MB`, default 1024 MB) Strix exits early and asks you to re-run with `--mount`.
+  .ai.soc copies local `--target` directories into the sandbox one file at a time, which stalls on very large trees. When a local target exceeds the copy limit (see `STRIX_MAX_LOCAL_COPY_MB`, default 1024 MB) .ai.soc exits early and asks you to re-run with `--mount`.
 
   <Note>
     The mount is read-only to protect your source from accidental modification. This is not a hard security boundary: a root process inside the container can remount it writable, so treat `--mount` as "scan my own code", not as isolation from untrusted code.
@@ -79,25 +80,25 @@ strix --target <target> [options]
 
 ```bash
 # Basic scan
-strix --target https://example.com
+soc --target https://example.com
 
 # Authenticated testing
-strix --target https://app.com --instruction "Use credentials: user:pass"
+soc --target https://app.com --instruction "Use credentials: user:pass"
 
 # Focused testing
-strix --target api.example.com --instruction "Focus on IDOR and auth bypass"
+soc --target api.example.com --instruction "Focus on IDOR and auth bypass"
 
 # CI/CD mode
-strix -n --target ./ --scan-mode quick
+soc -n --target ./ --scan-mode quick
 
 # Force diff-scope against a specific base ref
-strix -n --target ./ --scan-mode quick --scope-mode diff --diff-base origin/main
+soc -n --target ./ --scan-mode quick --scope-mode diff --diff-base origin/main
 
 # Multi-target white-box testing
-strix -t https://github.com/org/app -t https://staging.example.com
+soc -t https://github.com/org/app -t https://staging.example.com
 
 # Large local repository — bind-mount instead of copying it in
-strix --mount ./huge-monorepo
+soc --mount ./huge-monorepo
 ```
 
 ## Exit Codes

@@ -1,9 +1,10 @@
+<!-- Modified from Strix original. See NOTICE and LICENSE for details. -->
 ---
 title: "Local Models"
-description: "Run Strix with self-hosted LLMs for privacy and air-gapped testing"
+description: "Run .ai.soc with self-hosted LLMs for privacy and air-gapped testing"
 ---
 
-Running Strix with local models allows for completely offline, privacy-first security assessments. Data never leaves your machine, making this ideal for sensitive internal networks or air-gapped environments.
+Running .ai.soc with local models allows for completely offline, privacy-first security assessments. Data never leaves your machine, making this ideal for sensitive internal networks or air-gapped environments.
 
 ## Privacy vs Performance
 
@@ -15,7 +16,7 @@ Running Strix with local models allows for completely offline, privacy-first sec
 | **Setup** | Complex (GPU required) | Instant |
 
 <Warning>
-**Compatibility Note**: Strix relies on advanced agentic capabilities (tool use, multi-step planning, self-correction). Most local models, especially those under 70B parameters, struggle with these complex tasks.
+**Compatibility Note**: .ai.soc relies on advanced agentic capabilities (tool use, multi-step planning, self-correction). Most local models, especially those under 70B parameters, struggle with these complex tasks.
 
 For critical assessments, we strongly recommend using state-of-the-art cloud models like **Claude 4.5 Sonnet** or **GPT-5**. Use local models only when privacy is the absolute priority.
 </Warning>
@@ -31,7 +32,7 @@ For critical assessments, we strongly recommend using state-of-the-art cloud mod
    ```bash
    ollama pull qwen3-vl
    ```
-3. Configure Strix:
+3. Configure .ai.soc:
    ```bash
    export STRIX_LLM="ollama/qwen3-vl"
    export LLM_API_BASE="http://localhost:11434"

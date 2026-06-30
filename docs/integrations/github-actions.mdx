@@ -1,9 +1,10 @@
+<!-- Modified from Strix original. See NOTICE and LICENSE for details. -->
 ---
 title: "GitHub Actions"
-description: "Run Strix security scans on every pull request"
+description: "Run .ai.soc security scans on every pull request"
 ---
 
-Integrate Strix into your GitHub workflow to catch vulnerabilities before they reach production.
+Integrate .ai.soc into your GitHub workflow to catch vulnerabilities before they reach production.
 
 ## Basic Workflow
 
@@ -21,14 +22,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Strix
+      - name: Install .ai.soc
         run: curl -sSL https://strix.ai/install | bash
 
       - name: Run Security Scan
         env:
           STRIX_LLM: ${{ secrets.STRIX_LLM }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-        run: strix -n -t ./ --scan-mode quick
+        run: soc -n -t ./ --scan-mode quick
 ```
 
 ## Required Secrets
@@ -62,5 +63,5 @@ Use `quick` mode for PRs to keep feedback fast. Schedule `deep` scans nightly.
 </Tip>
 
 <Note>
-For pull_request workflows, Strix automatically uses changed-files diff-scope in CI/headless runs. If diff resolution fails, ensure full history is fetched (`fetch-depth: 0`) or set `--diff-base`.
+For pull_request workflows, .ai.soc automatically uses changed-files diff-scope in CI/headless runs. If diff resolution fails, ensure full history is fetched (`fetch-depth: 0`) or set `--diff-base`.
 </Note>

@@ -229,6 +229,8 @@ excludes = [
     'cv2',
 ]
 
+# Modified from Strix original. See NOTICE and LICENSE for details.
+
 a = Analysis(
     ['strix/interface/main.py'],
     pathex=[str(project_root)],
@@ -251,7 +253,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='strix',
+    name='soc',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

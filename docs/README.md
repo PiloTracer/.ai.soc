@@ -1,6 +1,7 @@
-# Strix Documentation
+# .ai.soc Documentation
 
-Documentation source files for Strix, powered by [Mintlify](https://mintlify.com).
+Documentation source files for .ai.soc, powered by [Mintlify](https://mintlify.com).
+Derived from Strix by OmniSecure Inc. — see NOTICE and LICENSE.
 
 ## Local Preview
 

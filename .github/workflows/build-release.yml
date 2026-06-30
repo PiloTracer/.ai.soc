@@ -36,23 +36,23 @@ jobs:
         shell: bash
         run: |
           uv sync --frozen
-          uv run pyinstaller strix.spec --noconfirm
+          uv run pyinstaller soc.spec --noconfirm
 
           VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
           mkdir -p dist/release
 
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            cp dist/strix.exe "dist/release/strix-${VERSION}-${{ matrix.target }}.exe"
-            (cd dist/release && 7z a "strix-${VERSION}-${{ matrix.target }}.zip" "strix-${VERSION}-${{ matrix.target }}.exe")
+            cp dist/soc.exe "dist/release/soc-${VERSION}-${{ matrix.target }}.exe"
+            (cd dist/release && 7z a "soc-${VERSION}-${{ matrix.target }}.zip" "soc-${VERSION}-${{ matrix.target }}.exe")
           else
-            cp dist/strix "dist/release/strix-${VERSION}-${{ matrix.target }}"
-            chmod +x "dist/release/strix-${VERSION}-${{ matrix.target }}"
-            tar -C dist/release -czvf "dist/release/strix-${VERSION}-${{ matrix.target }}.tar.gz" "strix-${VERSION}-${{ matrix.target }}"
+            cp dist/soc "dist/release/soc-${VERSION}-${{ matrix.target }}"
+            chmod +x "dist/release/soc-${VERSION}-${{ matrix.target }}"
+            tar -C dist/release -czvf "dist/release/soc-${VERSION}-${{ matrix.target }}.tar.gz" "soc-${VERSION}-${{ matrix.target }}"
           fi
 
       - uses: actions/upload-artifact@v4
         with:
-          name: strix-${{ matrix.target }}
+          name: soc-${{ matrix.target }}
           path: |
             dist/release/*.tar.gz
             dist/release/*.zip
