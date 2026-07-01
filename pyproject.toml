@@ -2,7 +2,7 @@
 
 [project]
 name = "ai-soc"
-version = "1.0.4"
+version = "0.4.2"
 description = "Security OS — autonomous AI security testing framework"
 readme = "README.md"
 license = "Apache-2.0"

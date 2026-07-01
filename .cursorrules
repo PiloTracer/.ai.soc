@@ -200,6 +200,10 @@ UI milestone work is not done until: UI lint/type/tests pass; `@ui-visual-verify
 
 **Lost on security?** `.ai.soc/START_HERE.md` · **Router:** `@soc-director - <what you want>`
 
+### SOC source resolution
+
+When deployed as a thin-client (via `@deploy-basic`), the `.cursorrules` carries a `SOC_SOURCE` line set to the absolute path of the source `.ai.soc` directory. The agent MUST resolve `.ai.soc/` references (`skills/<id>/skill.md`, `templates/`, `scripts/`) from `$SOC_SOURCE` at runtime. When `SOC_SOURCE` is missing or unreadable, skills resolve locally from this repo's `.ai.soc/` (fat-client mode).
+
 ### SOC context files
 
 | File | Purpose |
@@ -207,6 +211,7 @@ UI milestone work is not done until: UI lint/type/tests pass; `@ui-visual-verify
 | `.ai.soc/START_HERE.md` | Decision tree |
 | `.work.soc/context/HANDOFF_SOC.md` | Session handoff |
 | `.work.soc/plans/NEXT_SOC.md` | Tactical next action |
+| `.work.soc/plans/UNKNOWNS_SOC.md` | Open unknowns |
 
 ### SOC placeholders
 
@@ -215,15 +220,19 @@ UI milestone work is not done until: UI lint/type/tests pass; `@ui-visual-verify
 | `{WORK_SOC_ROOT}` | `.work.soc/` |
 | `{HANDOFF_SOC}` | `.work.soc/context/HANDOFF_SOC.md` |
 | `{NEXT_SOC}` | `.work.soc/plans/NEXT_SOC.md` |
-| `{SKILLS_SOC_ROOT}` | `/mnt/work/Projects/.ai.soc/skills/` |
+| `{UNKNOWNS_SOC}` | `.work.soc/plans/UNKNOWNS_SOC.md` |
+| `{SKILLS_SOC_ROOT}` | `.ai.soc/skills/` (local) or `$SOC_SOURCE/skills/` (thin-client) |
 
 ### SOC skills
 
 | Skill | Purpose |
 |-------|---------|
+| deploy-basic | Bootstrap `.work.soc/` + SOC source pointer (thin-client); update/status |
+| deploy-files | Copy `.ai.soc/` files into target (fat-client); update/status |
+| deploy-repo | Clone or archive the full `.ai.soc` repo |
 | soc-director | Run penetration tests against targets (local code, URLs, domains) |
 | soc-gateway | Run .ai.soc from source without system install |
-| session-soc | SOC session bookend; start/close/status; updates HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC |
+| session-soc | SOC session bookend; start/close/status/context; updates HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC |
 
 **Sessions:** `@session-soc` — opens and closes SOC sessions
 

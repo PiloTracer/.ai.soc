@@ -1,0 +1,45 @@
+<!-- SOC_DESIGN_OS_BEGIN -->
+
+## Security OS (`.ai.soc/`)
+
+**Lost on security?** `.ai.soc/START_HERE.md` · **Router:** `@soc-director - <what you want>`
+
+### SOC source resolution (thin-client)
+
+SOC_SOURCE=REPLACE_SOCSOURCE
+
+The agent MUST resolve `.ai.soc/` references from `$SOC_SOURCE` (thin-client mode). When `SOC_SOURCE` is set and readable, read `.ai.soc/skills/<id>/skill.md` from `$SOC_SOURCE/skills/<id>/skill.md`. Skills, standards, concepts, templates, and scripts resolve from the source at runtime.
+
+### SOC context files
+
+| File | Purpose |
+|------|---------|
+| `.ai.soc/START_HERE.md` | Decision tree |
+| `.work.soc/context/HANDOFF_SOC.md` | Session handoff |
+| `.work.soc/plans/NEXT_SOC.md` | Tactical next action |
+| `.work.soc/plans/UNKNOWNS_SOC.md` | Open unknowns |
+
+### SOC placeholders
+
+| Placeholder | Resolves to |
+|-------------|-------------|
+| `{WORK_SOC_ROOT}` | `.work.soc/` |
+| `{HANDOFF_SOC}` | `.work.soc/context/HANDOFF_SOC.md` |
+| `{NEXT_SOC}` | `.work.soc/plans/NEXT_SOC.md` |
+| `{UNKNOWNS_SOC}` | `.work.soc/plans/UNKNOWNS_SOC.md` |
+| `{SKILLS_SOC_ROOT}` | `$SOC_SOURCE/skills/` (from SOC_SOURCE pointer) |
+
+### SOC skills
+
+| Skill | Purpose |
+|-------|---------|
+| deploy-basic | Bootstrap `.work.soc/` + SOC source pointer (thin-client) |
+| deploy-files | Copy `.ai.soc/` files into target (fat-client) |
+| deploy-repo | Clone or archive the full `.ai.soc` repo |
+| session-soc | SOC session bookend; start/close/status/context |
+| soc-director | Run penetration tests against targets |
+| soc-gateway | Run .ai.soc from source without system install |
+
+**Sessions:** `@session-soc` — opens and closes SOC sessions
+
+<!-- SOC_DESIGN_OS_END -->
