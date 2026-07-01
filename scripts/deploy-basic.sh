@@ -97,10 +97,7 @@ append_soc_block
 # Re-sync source pointer when --update and the existing pointer is stale.
 if [[ "$MODE" == "update" ]] && [[ -n "$existing_source" ]] && [[ "$existing_source" != "$SOC_ROOT" ]]; then
   if grep -q 'SOC_SOURCE=' "$CURS_DEST"; then
-    SOC_ROOT_ESC="${SOC_ROOT//\//\\/}"
-    OLD_ESC="${existing_source//\//\\/}"
-    perl -i -pe "s{SOC_SOURCE=\Q${existing_source}\E}{SOC_SOURCE=${SOC_ROOT_ESC}}" "$CURS_DEST" 2>/dev/null || \
-      perl -i -pe "s/SOC_SOURCE=[^\n]*/SOC_SOURCE=${SOC_ROOT_ESC}/" "$CURS_DEST"
+    sed -i "s#^SOC_SOURCE=.*#SOC_SOURCE=${SOC_ROOT}#" "$CURS_DEST"
     echo "  cursorrules: re-synced SOC_SOURCE → $SOC_ROOT (was: ${existing_source:-<unset>})"
   fi
 fi

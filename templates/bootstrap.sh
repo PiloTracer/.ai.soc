@@ -5,8 +5,13 @@ set -euo pipefail
 SOC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TPL="${SOC_ROOT}/templates/work"
 
-# Repo root: git root containing .ai.soc/
-if [[ -d "${SOC_ROOT}/.git" ]]; then
+# Repo root: git root containing .ai.soc/.
+# Honor explicit REPO_ROOT override so deploy-basic can scaffold into a TARGET
+# directory when bootstrap.sh is invoked from an external source .ai.soc.
+#   REPO_ROOT=/mnt/work/Projects/tools-project bash /mnt/work/Projects/.ai.soc/templates/bootstrap.sh
+if [[ -n "${REPO_ROOT:-}" ]]; then
+  REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
+elif [[ -d "${SOC_ROOT}/.git" ]]; then
   REPO_ROOT="${SOC_ROOT}"
 elif [[ -d "${SOC_ROOT}/../.git" ]] && [[ -d "${SOC_ROOT}/templates" ]]; then
   REPO_ROOT="$(cd "${SOC_ROOT}/.." && pwd)"
