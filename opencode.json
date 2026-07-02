@@ -36,5 +36,13 @@
       "/mnt/work/Projects/.ai.biz/skills",
       "/mnt/work/Projects/.ai.soc/skills"
     ]
+  },
+
+  "mcp": {
+    "tools-project": {
+      "type": "local",
+      "command": ["python3", ".opencode/mcp/project-mcp/mcp_server.py"],
+      "enabled": true
+    }
   }
 }
