@@ -58,7 +58,12 @@ Check and report:
    - Local: `http://localhost:18513/settings/api-keys`
    - Remote: `https://<user-provided-url>/settings/api-keys`
 
-If any prerequisite fails, stop and tell the user what to fix.
+If any prerequisite fails, stop and tell the user what to fix. If tools-project is not running locally, guide the user to start it from the tools-project repo:
+```bash
+cd /mnt/work/Projects/tools-project
+docker compose up -d
+```
+Or if they don't have tools-project deployed, direct them to the tools-project repository for installation instructions.
 
 ### Step 3 — Key creation (web UI)
 
@@ -72,25 +77,42 @@ Guide the user:
 5. COPY the key now — it starts with "tools_project_" — this is the ONLY time it's shown
 ```
 
-Wait for the user to confirm they have the key. Do NOT ask them to paste it into chat.
+Wait for the user to confirm they have the key. Do NOT ask them to paste it into chat. If they cannot access the web UI, offer to navigate them through the settings menu.
 
-### Step 4 — Write the key file
+### Step 4 — Create the key file
 
-Tell the user to run (or run it for them with their explicit permission):
+The key lives at `~/.tools-project-key` with `chmod 600`. Two scenarios:
+
+**Scenario A — User pasted the key in chat (with explicit permission):**
+Execute the write yourself using a heredoc (never echo the key into shell history):
 
 ```bash
-# For local tools-project:
-echo "tools_project_<key>" > ~/.tools-project-key
-
-# For remote tools-project:
-echo "BASE_URL=https://project.cloudsys.win" > ~/.tools-project-key
-echo "tools_project_<key>" >> ~/.tools-project-key
-
-# Always lock permissions:
+cat > ~/.tools-project-key << 'KEYEOF'
+BASE_URL=https://project.cloudsys.win
+tools_project_<key>
+KEYEOF
 chmod 600 ~/.tools-project-key
 ```
 
-**Critical:** Tell the user to replace `<key>` with the actual key. Do NOT write the key yourself unless the user explicitly pastes it in the conversation and asks you to.
+For local tools-project (no BASE_URL needed):
+```bash
+cat > ~/.tools-project-key << 'KEYEOF'
+tools_project_<key>
+KEYEOF
+chmod 600 ~/.tools-project-key
+```
+
+**Scenario B — User has the key but did NOT paste it:**
+Tell the user to run this (replace `<key>` with their actual key):
+
+```bash
+cat > ~/.tools-project-key << 'KEYEOF'
+tools_project_<key>
+KEYEOF
+chmod 600 ~/.tools-project-key
+```
+
+**Critical:** Never log, echo, or display the key value. Never store it in shell history (use heredoc or `cat >`). The file must be `chmod 600`.
 
 ### Step 5 — Test connectivity
 
@@ -114,12 +136,27 @@ If `401 Unauthorized` — the key is wrong or revoked. Go back to Step 3.
 If `403 Forbidden` — the user is not a superuser. Tell them to contact their admin.
 If `Connection refused` — API is not running. Stop and tell user.
 
-### Step 6 — Register MCP server
+### Step 6a — Copy the MCP server file
 
-If the consuming project has its own `opencode.json` (e.g. `.ai.soc` does), add the MCP server block:
+The MCP server script must exist in the consuming project's `.opencode/mcp/project-mcp/` directory.
+
+- **If the consuming project has its own `.opencode/` tree** (e.g. `.ai.soc` does): copy the server now:
+  ```bash
+  mkdir -p .opencode/mcp/project-mcp
+  cp /mnt/work/Projects/tools-project/.opencode/mcp/project-mcp/mcp_server.py \
+     .opencode/mcp/project-mcp/
+  ```
+- **If the consuming project does NOT have `.opencode/`** (e.g. `.ai`, `.ai.ui`, `.ai.biz` frameworks themselves): explain:
+  > This step is done in the **consuming project** (e.g. `tools-project/` or any app that uses this OS), not in the framework repo itself. When you deploy this OS to a project, copy the MCP server there.
+
+### Step 6b — Register MCP in opencode.json
+
+**If the consuming project has its own `opencode.json`** (e.g. `.ai.soc` at `/mnt/work/Projects/.ai.soc/opencode.json`):
+Read the current file, then add the `mcp` block preserving all existing keys:
 
 ```json
 {
+  ...existing content...,
   "mcp": {
     "tools-project": {
       "type": "local",
@@ -130,13 +167,27 @@ If the consuming project has its own `opencode.json` (e.g. `.ai.soc` does), add 
 }
 ```
 
-If it does NOT have `opencode.json` (like `.ai`, `.ai.ui`, `.ai.biz`), explain:
+After writing, validate with `python3 -c "import json; json.load(open('opencode.json'))"`.
 
-> The MCP server registration lives in the **consuming project's** opencode.json (e.g. `tools-project/opencode.json`, or any project that deploys this OS). It does not belong in the framework's own config. When you deploy this OS to a project, add the MCP block to THAT project's opencode.json. See the reference guide for the exact block.
+**If it does NOT have `opencode.json`** (like `.ai`, `.ai.ui`, `.ai.biz` framework repos):
+Explain:
+> The MCP server registration lives in the **consuming project's** opencode.json (e.g. `tools-project/opencode.json`, or any project that deploys this OS). It does not belong in the framework's own config. When you deploy this OS to a project, add the MCP block to THAT project's opencode.json. The reference guide has the exact block.
 
-### Step 7 — Confirm and show OS-specific patterns
+### Step 7 — Verify with completion checklist
 
-Report success with the actual project count returned. Then show OS-specific usage patterns:
+Run each check and report the result:
+
+| # | Check | How | Result |
+|---|-------|-----|--------|
+| 1 | Key file exists | `test -f ~/.tools-project-key` | pass / fail |
+| 2 | Permissions 600 | `stat -c '%a' ~/.tools-project-key` shows `600` | pass / fail |
+| 3 | API reachable | `curl -s <url>/healthz` returns 200 | pass / fail |
+| 4 | Auth works | `curl -s <url>/v1/agent/projects -H "X-Api-Key: $(tail -n1 ~/.tools-project-key)"` returns projects | pass / fail |
+| 5 | MCP server file present | `test -f .opencode/mcp/project-mcp/mcp_server.py` (or consuming project) | pass / skip |
+| 6 | MCP registered in opencode.json | `grep -q tools-project opencode.json` (or consuming project's config) | pass / skip |
+| 7 | python3 available | `which python3` | pass / fail |
+
+### Step 8 — Show OS-specific usage patterns
 
 ```
 Connected to tools-project. Found N projects.
