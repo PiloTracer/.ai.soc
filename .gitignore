@@ -78,6 +78,7 @@ agent_runs/
 *.bak
 *.tmp
 *.temp
+tmp-*.out
 .DS_Store
 Thumbs.db
 
