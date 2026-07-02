@@ -63,35 +63,35 @@ These principles override all other instructions. They are non-negotiable.
 
 ## Required Context Files
 
-**Lost or unsure what to do?** Read the framework START_HERE files (referenced via `opencode.json` instructions list).
+**Lost or unsure what to do?** Read `.ai.soc/START_HERE.md` (operator decision tree). If the task spans frameworks, the paths below are resolved from this table at runtime — no external config needed.
 
-**Free-text entry points:** If you don't know which skill to run, invoke `@x-director - <describe what you want>`. x-director resolves all three frameworks from the paths below.
+**Free-text entry points:** If you don't know which skill to run, invoke `@x-director - <describe what you want>`. x-director resolves frameworks from the table below.
 
-## Framework paths (external to this repo)
+## Framework paths
 
-The three Agent OS frameworks are **not** nested inside this repository. They are referenced via absolute paths configured in `opencode.json` and available at:
+Sister frameworks live as siblings on disk. Paths are absolute — no tool-specific config needed.
 
 | Framework | Path | Director |
 |-----------|------|----------|
 | Agent OS (`.ai`) | `/mnt/work/Projects/.ai` | `@ai-director` |
 | UI Design OS (`.ai.ui`) | `/mnt/work/Projects/.ai.ui` | `@ui-director` |
 | Business OS (`.ai.biz`) | `/mnt/work/Projects/.ai.biz` | `@biz-director` |
+| Security OS (`.ai.soc`) | `/mnt/work/Projects/.ai.soc` | `@soc-director` |
 
 ### Path resolution
 
-x-director and ai-director resolve frameworks using the `opencode.json` references. Preflight check before routing: verify the framework's `skills/README.md` exists at the declared path.
+x-director and ai-director resolve frameworks from the table above. Preflight check before routing: verify the framework's `skills/README.md` exists at the declared path. If absent, stop routing with a one-line `framework not installed here` message — never silently route into the void.
 
 Read these at the start of every conversation and when relevant:
 
 | File | Purpose |
 |------|---------|
-| **`opencode.json`** (repo root) | Framework registry, skill paths, instructions |
+| **`.ai.soc/START_HERE.md`** | Operator decision tree |
 | **`DOCS_TECH_STACK.md`** | Technology stack |
 | **`.work/context/HANDOFF.md`** | Session handoff |
 | **`.work/plans/NEXT.md`** | Active iteration, recommended next |
-| **`.ai/START_HERE.md`** via `/mnt/work/Projects/.ai/START_HERE.md` | Agent OS operator tree |
-| **`.ai.ui/START_HERE.md`** via `/mnt/work/Projects/.ai.ui/START_HERE.md` | UI operator tree |
-| **`.ai.biz/START_HERE.md`** via `/mnt/work/Projects/.ai.biz/START_HERE.md` | Business operator tree |
+| **`.work.soc/context/HANDOFF_SOC.md`** | SOC session handoff |
+| **`.work.soc/plans/NEXT_SOC.md`** | SOC tactical next action |
 
 ---
 
@@ -259,7 +259,6 @@ When deployed as a thin-client (via `@deploy-basic`), the `.cursorrules` carries
 - `pyproject.toml` (dependencies, devDependencies, build config)
 - `Makefile` (build/test/lint targets)
 - `Containers/Dockerfile` (base image, runtime deps)
-- `opencode.json` (framework registry, skill paths)
 - `.github/workflows/*` (CI/CD pipeline)
 - `.pre-commit-config.yaml`
 - `.env*` (except `.env.example`)
