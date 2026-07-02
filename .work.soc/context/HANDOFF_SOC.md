@@ -1,28 +1,27 @@
 # HANDOFF_SOC — Security OS session state
 
-**Session:** SOC-002 — session-soc skill + SOC framework polish
-**Date:** 2026-06-30
+**Session:** SOC-003 — remove tools-project integration
+**Date:** 2026-07-01
 **Status:** Closed
 
 ## Summary
 
-Created `session-soc` skill for SOC session bookends (start/close/status). Updated `.cursorrules` SOC section: registered session-soc, changed session ownership from `@session-control` to `@session-soc`, fixed HANDOFF_SOC path reference. Verified naming ambiguity (soc ≠ social) is not a real routing issue.
+Removed all tools-project integration from `.ai.soc`. The parent `.ai` project now owns all inter-framework communications with tools-project. Deleted the `soc-project-query-setup` skill, the `project-mcp` MCP server, and their entries in `.cursorrules` and `skills/README.md`.
 
 ## Completed
 
-- [x] Created `skills/session-soc/skill.md` modeled after `session-biz`
-- [x] Registered `session-soc` in `.cursorrules` SOC skills table
-- [x] Changed SOC sessions from `@session-control` (`.ai/`) to `@session-soc`
-- [x] Fixed `HANDOFF_SOC` path in `.cursorrules` (was `HANDOFF.md`)
-- [x] Removed misleading `@soc-*` label from SOC skills header
-- [x] Ran `@session-soc close commit push` — committed and pushed
+- [x] Deleted `skills/soc-project-query-setup/` (skill.md + reference.md)
+- [x] Deleted `.opencode/mcp/project-mcp/mcp_server.py` (MCP bridge)
+- [x] Deleted `.opencode/` tree (now empty)
+- [x] Removed `soc-project-query-setup` row from `.cursorrules` SOC skills table
+- [x] Removed `soc-project-query-setup` row from `skills/README.md` registered skills table
+- [x] Verified zero references to `soc-project-query-setup`, `project-mcp`, `tools-project-key`, `TOOLS_PROJECT_API_KEY` across entire codebase
+- [x] Committed and pushed
 
 ## Produced artifacts
 
-| Artifact | Path |
-|----------|------|
-| session-soc skill | `skills/session-soc/skill.md` |
+*(none — removal only)*
 
 ## Open
 
-- No new unknowns. Path rebasin and module rename remain deferred.
+- Parent `.ai` project now owns all tools-project integration. No new unknowns.

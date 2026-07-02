@@ -28,7 +28,7 @@ Portable, tool-agnostic workflows for security operations. Each skill is a folde
 | session-soc | `session-soc/` | SOC session bookend; start/close/status/context; updates HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC |
 | soc-director | `soc-director/` | Run penetration tests against targets (local code, URLs, domains); deep/standard/quick scan modes |
 | soc-gateway | `soc-gateway/` | Run .ai.soc from source without system install |
-| soc-project-query-setup | `soc-project-query-setup/` | **Optional integration:** guide through tools-project API key, MCP registration, connectivity test. OS-aware (tailors guidance per framework). |
+
 
 **Orientation:** `@session-soc context` or read `.work.soc/context/HANDOFF_SOC.md`.
 

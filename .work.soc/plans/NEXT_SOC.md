@@ -20,6 +20,7 @@
 | SOC-004 | Bootstrap templates for `.work.soc/` structure | DONE |
 | SOC-005 | Path templating for portable `.ai.soc` framework | PENDING |
 | SOC-006 | Register `.ai.soc` skills with `opencode.json` | DONE |
+| SOC-007 | Remove tools-project integration (moved to parent `.ai`) | DONE |
 
 ## Completed work
 
