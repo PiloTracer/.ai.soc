@@ -132,13 +132,28 @@ if [[ "$MODE" == "update" ]] && [[ -s "$MERGE_CANDS" ]]; then
   while IFS= read -r rel; do
     echo "  merge: $rel"
   done < "$MERGE_CANDS"
-  echo "  (agent performs rules-aware merge: append new rules, update shared"
-  echo "   sections, preserve target customizations; never wholesale-replace.)"
+  echo "  (agent performs rules-aware merge — append new sections, preserve target"
+  echo "   customizations. See skill deploy-basic/skill.md § update-merge.)"
 fi
 
 echo ""
 echo "=== Done: files deployed to $DEST_DIR ==="
 echo ""
-echo "Next steps in target project:"
-echo "  1. Append SOC block to .cursorrules (run @deploy-basic or manually)"
-echo "  2. Run @session-soc start"
+
+if [[ "$RAW_TARGET" == "." || "$RAW_TARGET" == "$PWD" ]]; then
+  REPO_ROOT="$(cd "$PARENT" && pwd)"
+  SOC_SOURCE="$SOC_ROOT" bash "$SOC_ROOT/scripts/deploy-basic.sh" . \
+    > /tmp/deploy-files-soc-basic.$$.log 2>&1 || { cat /tmp/deploy-files-soc-basic.$$.log; rm -f /tmp/deploy-files-soc-basic.$$.log; exit 1; }
+  grep -E '(===|cursorrules:|work:|SOC block|Done:)' /tmp/deploy-files-soc-basic.$$.log | sed 's/^/  scaffold: /' || true
+  rm -f /tmp/deploy-files-soc-basic.$$.log
+  SCAFFOLD_DONE=1
+fi
+
+if [[ -n "${SCAFFOLD_DONE:-}" ]]; then
+  echo "  Scaffold: .work.soc/ + SOC block in .cursorrules (via deploy-basic)"
+  echo "  Next: @session-soc start"
+else
+  echo "Next steps in target project:"
+  echo "  1. Run @deploy-basic or append SOC block to .cursorrules"
+  echo "  2. Run @session-soc start"
+fi

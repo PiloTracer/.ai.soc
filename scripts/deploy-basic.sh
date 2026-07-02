@@ -21,13 +21,45 @@
 #
 # Usage:
 #   bash scripts/deploy-basic.sh <target-path>              # no-overwrite (skip existing)
+#   bash scripts/deploy-basic.sh --status [target-path]   # read-only report
 #   bash scripts/deploy-basic.sh <target-path> --update    # no-overwrite + merge candidate list
 #   bash scripts/deploy-basic.sh <target-path> --force     # overwrite local scaffold (legacy)
 #   SOC_SOURCE=/path/.ai.soc bash scripts/deploy-basic.sh <target-path>
 #
 set -euo pipefail
 
-RAW_TARGET="${1:?Usage: $0 <target-path> [--force|--update]}"
+if [[ "${1:-}" == "--status" ]]; then
+  shift
+  RAW_TARGET="${1:-.}"
+  if [[ "$RAW_TARGET" == "." || "$RAW_TARGET" == "$PWD" ]]; then
+    DEST_ROOT="$(pwd)"
+  else
+    DEST_ROOT="$(cd "$RAW_TARGET" && pwd)"
+  fi
+  CURS_DEST="${DEST_ROOT}/.cursorrules"
+  echo "=== deploy-basic status → $DEST_ROOT ==="
+  if [[ -f "$CURS_DEST" ]]; then
+    echo "  .cursorrules: present"
+    if grep -q 'SOC_DESIGN_OS_BEGIN' "$CURS_DEST" 2>/dev/null; then
+      echo "  SOC block: present"
+    else
+      echo "  SOC block: missing"
+    fi
+    src="$(grep -oE 'SOC_SOURCE=[^ ]*' "$CURS_DEST" 2>/dev/null | head -1 | cut -d= -f2- || true)"
+    if [[ -n "$src" && "$src" != "REPLACE_SOCSOURCE" ]]; then
+      if [[ -d "$src" ]]; then echo "  SOC_SOURCE: $src (reachable)"; else echo "  SOC_SOURCE: $src (UNREACHABLE)"; fi
+    else
+      echo "  SOC_SOURCE: missing or unset"
+    fi
+  else
+    echo "  .cursorrules: MISSING"
+  fi
+  [[ -d "${DEST_ROOT}/.work.soc/context" ]] && echo "  .work.soc/: present" || echo "  .work.soc/: missing"
+  [[ -d "${DEST_ROOT}/.ai.soc/skills" ]] && echo "  local .ai.soc/skills/: present (fat-client ok)" || echo "  local .ai.soc/skills/: absent (thin-client)"
+  exit 0
+fi
+
+RAW_TARGET="${1:?Usage: $0 [--status] <target-path> [--force|--update]}"
 shift || true
 MODE="skip"
 while [[ $# -gt 0 ]]; do
@@ -105,7 +137,7 @@ fi
 # Step 2: .work.soc/ skeleton via bootstrap.sh (no-overwrite).
 BOOTSTRAP_SKIP_CURSERRULES=1 REPO_ROOT="$DEST_ROOT" bash "$SOC_ROOT/templates/bootstrap.sh" \
   > /tmp/deploy-basic-bootstrap.$$.log 2>&1 || { cat /tmp/deploy-basic-bootstrap.$$.log; rm -f /tmp/deploy-basic-bootstrap.$$.log; exit 1; }
-grep -E '^(created:|skip )' /tmp/deploy-basic-bootstrap.$$.log | sed 's/^/  work: /'
+grep -E '(created:|skip )' /tmp/deploy-basic-bootstrap.$$.log | sed 's/^/  work: /' || true
 rm -f /tmp/deploy-basic-bootstrap.$$.log
 
 # Step 3: --update — list merge candidates.

@@ -1,0 +1,17 @@
+name: framework-verify
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run framework-verify
+        run: bash scripts/framework-verify.sh

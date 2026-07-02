@@ -27,7 +27,7 @@
 |----------|------|-------|
 | **0** | Review `.work.soc/context/HANDOFF_SOC.md` | Orient on current state |
 | **1** | Run first SOC assessment | `@soc-assessment run --target <path>` |
-| **2** | Register `.ai.soc` in `opencode.json` | Add reference + skills path |
+| **2** | Verify skills load from source or parent `.ai/` | Run `@session-soc start`; register via parent `.ai/opencode.json` when co-installed |
 
 ---
 

@@ -78,19 +78,14 @@ When invoked from a **target** project (cwd has no `.ai.soc/scripts/deploy-files
 
 ## I2 — Scaffold (in-place direction only)
 
-When invoked in-place (bare `@deploy-files` or `@deploy-files update`), after the copy pass run the `.work.soc/` + `.cursorrules` SOC block scaffold **into the target**:
+When invoked in-place (bare `@deploy-files` or `@deploy-files update`), after the copy pass the script **automatically chains**:
 
-```bash
-REPO_ROOT="$(pwd)" bash <source>/templates/bootstrap.sh
-```
+1. `.work.soc/` scaffold via `REPO_ROOT=<target> bash <source>/templates/bootstrap.sh`
+2. SOC block in `.cursorrules` via `bash <source>/scripts/deploy-basic.sh <target>`
 
-Then append the SOC block snippet (same as `@deploy-basic`) to the target's `.cursorrules`:
+No separate `@deploy-basic` invocation is required after in-place `@deploy-files`.
 
-```bash
-bash <source>/scripts/deploy-basic.sh "$(pwd)"
-```
-
-**Outbound `copy - <path>` does NOT scaffold** — it leaves next-step instructions.
+**Outbound `copy - <path>` does NOT scaffold** — run `@deploy-basic` in the target after copy.
 
 ---
 

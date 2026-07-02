@@ -11,7 +11,7 @@ description: >-
 
 # deploy-repo
 
-**Shell:** `bash .ai.soc/scripts/deploy-repo.sh <clone|archive> <target-path>`
+**Shell:** `bash .ai.soc/scripts/deploy-repo.sh [--status [path] | <clone|archive> <target-path>]`
 
 Deploys the entire `.ai.soc` repository (including `.git/`, `.github/`, `.gitignore`, and root `.cursorrules`) into a target directory. Two modes cover both git-mirror and snapshot deployments.
 
@@ -27,7 +27,9 @@ Deploys the entire `.ai.soc` repository (including `.git/`, `.github/`, `.gitign
 |-----------|------|
 | `@deploy-repo clone - /path/to/repo` | Full `git clone` from origin remote to target path |
 | `@deploy-repo archive - /path/to/repo` | `git archive HEAD \| tar xf` — full tree, no `.git` |
-| `@deploy-repo status` | Report source remote, existing deploy locations |
+| `@deploy-repo status` | Report source remote, HEAD, optional target deploy state |
+
+**Shell (read-only):** `bash scripts/deploy-repo.sh --status [target-path]`
 
 **Default:** `status` if no verb matches.
 
@@ -79,11 +81,8 @@ Deploys the entire `.ai.soc` repository (including `.git/`, `.github/`, `.gitign
 ## Next commands (in target project)
 
 ```text
-# Update .cursorrules with SOC block:
 @deploy-basic
-
-# Register in opencode.json:
-# Add to "skills.paths": ["<path>/.ai.soc/skills"]
-
 @session-soc start
 ```
+
+**OpenCode:** Security OS does not ship `opencode.json`. When co-installed with Agent OS, skills are registered in the parent `.ai/opencode.json`.

@@ -4,6 +4,10 @@
 
 .ai.soc agents act like real hackers — they run your code dynamically, find vulnerabilities, and validate them through actual proof-of-concepts. Built for developers and security teams who need fast, accurate security testing.
 
+**Platform:** Developed and verified on **Linux** (bash, git, rsync, Docker). Shell scripts and docs assume a POSIX environment. macOS, Windows (WSL2), and other OSes work when you adapt paths, line endings, and local tooling in your consumer repo — run `bash scripts/framework-verify.sh` when present to confirm the baseline toolchain on your host.
+
+**Customization:** Security OS is a starting point, not a fixed contract. You are already working with a coding agent — use the same workflow to tailor skills, `.cursorrules`, and `.work.soc/` to your repository and security workflow. Fork, trim, or extend the framework in your consumer project (or in this repo when self-hosting) as your process evolves. OpenCode and other host configs are owned by your primary Agent OS (`.ai/`) when co-installed — this framework does not ship a local `opencode.json`.
+
 **Key Capabilities:**
 
 - **Full hacker toolkit** out of the box
