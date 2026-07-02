@@ -2,7 +2,7 @@
 
 **Purpose:** Guide user through connecting their coding agent to tools-project, and teach it to query tasks, tickets, projects, and clients for context-aware work.
 
-**Deploy to:** Any Agent OS framework (`.ai`, `.ai.ui`, `.ai.biz`, `.ai.soc`) — optional integration.
+**Deploy to:** Security OS (`.ai`, `.ai.ui`, `.ai.biz`, `.ai.soc`) — optional integration.
 
 **Tutorial companion:** `.work/docs/tutorials/LLM-2-API_SETUP.md` (step-by-step setup walkthrough)
 
@@ -58,12 +58,7 @@ Check and report:
    - Local: `http://localhost:18513/settings/api-keys`
    - Remote: `https://<user-provided-url>/settings/api-keys`
 
-If any prerequisite fails, stop and tell the user what to fix. If tools-project is not running locally, guide the user to start it from the tools-project repo:
-```bash
-cd /mnt/work/Projects/tools-project
-docker compose up -d
-```
-Or if they don't have tools-project deployed, direct them to the tools-project repository for installation instructions.
+If any prerequisite fails, stop and tell the user what to fix.
 
 ### Step 3 — Key creation (web UI)
 
@@ -74,45 +69,26 @@ Guide the user:
 2. Click "+ New key"
 3. Enter a label (e.g. "My laptop", "Agent OS integration")
 4. Click "Create"
-5. COPY the key now — it starts with "tools_project_" — this is the ONLY time it's shown
+5. COPY the key now — it starts with "tools_project_"
 ```
 
-Wait for the user to confirm they have the key. Do NOT ask them to paste it into chat. If they cannot access the web UI, offer to navigate them through the settings menu.
+Wait for the user to confirm they have the key. Do NOT ask them to paste it into chat.
 
 ### Step 4 — Create the key file
 
-The key lives at `~/.tools-project-key` with `chmod 600`. Two scenarios:
-
-**Scenario A — User pasted the key in chat (with explicit permission):**
-Execute the write yourself using a heredoc (never echo the key into shell history):
+Tell the user to create `~/.tools-project-key` with their key:
 
 ```bash
-cat > ~/.tools-project-key << 'KEYEOF'
-BASE_URL=https://project.cloudsys.win
-tools_project_<key>
-KEYEOF
+# For local tools-project (no BASE_URL):
+echo "tools_project_YOUR_KEY_HERE" > ~/.tools-project-key
+chmod 600 ~/.tools-project-key
+
+# For remote tools-project:
+printf 'BASE_URL=https://project.cloudsys.win\ntools_project_YOUR_KEY_HERE\n' > ~/.tools-project-key
 chmod 600 ~/.tools-project-key
 ```
 
-For local tools-project (no BASE_URL needed):
-```bash
-cat > ~/.tools-project-key << 'KEYEOF'
-tools_project_<key>
-KEYEOF
-chmod 600 ~/.tools-project-key
-```
-
-**Scenario B — User has the key but did NOT paste it:**
-Tell the user to run this (replace `<key>` with their actual key):
-
-```bash
-cat > ~/.tools-project-key << 'KEYEOF'
-tools_project_<key>
-KEYEOF
-chmod 600 ~/.tools-project-key
-```
-
-**Critical:** Never log, echo, or display the key value. Never store it in shell history (use heredoc or `cat >`). The file must be `chmod 600`.
+**Critical:** Ask the user to replace `YOUR_KEY_HERE` with the actual key they copied. If the user is willing to paste the key into the conversation and asks you to write the file, run the command for them — but never log, display, or store the key value anywhere else. Always `chmod 600`.
 
 ### Step 5 — Test connectivity
 
@@ -136,42 +112,52 @@ If `401 Unauthorized` — the key is wrong or revoked. Go back to Step 3.
 If `403 Forbidden` — the user is not a superuser. Tell them to contact their admin.
 If `Connection refused` — API is not running. Stop and tell user.
 
-### Step 6a — Copy the MCP server file
+### Step 6 — Deploy MCP server
 
-The MCP server script must exist in the consuming project's `.opencode/mcp/project-mcp/` directory.
+**Detect if this project has an `opencode.json`:**
 
-- **If the consuming project has its own `.opencode/` tree** (e.g. `.ai.soc` does): copy the server now:
-  ```bash
-  mkdir -p .opencode/mcp/project-mcp
-  cp /mnt/work/Projects/tools-project/.opencode/mcp/project-mcp/mcp_server.py \
-     .opencode/mcp/project-mcp/
-  ```
-- **If the consuming project does NOT have `.opencode/`** (e.g. `.ai`, `.ai.ui`, `.ai.biz` frameworks themselves): explain:
-  > This step is done in the **consuming project** (e.g. `tools-project/` or any app that uses this OS), not in the framework repo itself. When you deploy this OS to a project, copy the MCP server there.
-
-### Step 6b — Register MCP in opencode.json
-
-**If the consuming project has its own `opencode.json`** (e.g. `.ai.soc` at `/mnt/work/Projects/.ai.soc/opencode.json`):
-Read the current file, then add the `mcp` block preserving all existing keys:
-
-```json
-{
-  ...existing content...,
-  "mcp": {
-    "tools-project": {
-      "type": "local",
-      "command": ["python3", ".opencode/mcp/project-mcp/mcp_server.py"],
-      "enabled": true
-    }
-  }
-}
+```bash
+if test -f opencode.json; then
+  echo "HAS_OPENCODE=yes"
+else
+  echo "HAS_OPENCODE=no"
+fi
 ```
 
-After writing, validate with `python3 -c "import json; json.load(open('opencode.json'))"`.
+**Branch A — `opencode.json` exists in this project** (e.g. `.ai.soc`):
+Copy the MCP server and register it in one reliable operation:
 
-**If it does NOT have `opencode.json`** (like `.ai`, `.ai.ui`, `.ai.biz` framework repos):
+```bash
+# 1. Copy the MCP server file
+mkdir -p .opencode/mcp/project-mcp
+cp /mnt/work/Projects/tools-project/.opencode/mcp/project-mcp/mcp_server.py \
+   .opencode/mcp/project-mcp/
+
+# 2. Add the MCP block to opencode.json using Python
+#    (safe JSON manipulation — preserves all existing keys, validates input)
+python3 << 'PYEOF'
+import json
+with open('opencode.json') as f:
+    cfg = json.load(f)
+cfg.setdefault('mcp', {})['tools-project'] = {
+    "type": "local",
+    "command": ["python3", ".opencode/mcp/project-mcp/mcp_server.py"],
+    "enabled": True
+}
+with open('opencode.json', 'w') as f:
+    json.dump(cfg, f, indent=2)
+    f.write('\n')
+PYEOF
+
+# 3. Validate the result
+python3 -c "import json; json.load(open('opencode.json')); print('opencode.json: valid')"
+```
+
+**Branch B — No `opencode.json` in this project** (e.g. `.ai`, `.ai.ui`, `.ai.biz`):
 Explain:
-> The MCP server registration lives in the **consuming project's** opencode.json (e.g. `tools-project/opencode.json`, or any project that deploys this OS). It does not belong in the framework's own config. When you deploy this OS to a project, add the MCP block to THAT project's opencode.json. The reference guide has the exact block.
+> The MCP server and its registration belong in the **consuming project's** `opencode.json` (e.g. `tools-project/opencode.json`, or any project you deploy this OS into). They do not go in the framework's own config. When you deploy this OS to a project:
+> 1. Copy `mcp_server.py` from tools-project to `.opencode/mcp/project-mcp/` in that project
+> 2. Add the `mcp` block to that project's `opencode.json` (use the Branch A commands above, run from that project's root)
 
 ### Step 7 — Verify with completion checklist
 
@@ -184,7 +170,7 @@ Run each check and report the result:
 | 3 | API reachable | `curl -s <url>/healthz` returns 200 | pass / fail |
 | 4 | Auth works | `curl -s <url>/v1/agent/projects -H "X-Api-Key: $(tail -n1 ~/.tools-project-key)"` returns projects | pass / fail |
 | 5 | MCP server file present | `test -f .opencode/mcp/project-mcp/mcp_server.py` (or consuming project) | pass / skip |
-| 6 | MCP registered in opencode.json | `grep -q tools-project opencode.json` (or consuming project's config) | pass / skip |
+| 6 | MCP registered in opencode.json | `python3 -c "import json; c=json.load(open('opencode.json')); print('yes' if 'tools-project' in c.get('mcp',{}) else 'no')"` (or consuming project's config) | pass / skip |
 | 7 | python3 available | `which python3` | pass / fail |
 
 ### Step 8 — Show OS-specific usage patterns
