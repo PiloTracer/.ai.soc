@@ -67,11 +67,11 @@ chmod 600 ~/.tools-project-key
 
 ### 4. Deploy the setup skill
 
-Copy the `project-query-setup` skill into the framework's skills directory so operators can invoke `@project-query-setup install`:
+Copy the `soc-project-query-setup` skill into the framework's skills directory so operators can invoke `@soc-project-query-setup install`:
 
 ```bash
-cp -r /tmp/opencode/project-query-setup \
-      /path/to/framework/skills/project-query-setup/
+cp -r /tmp/opencode/soc-project-query-setup \
+      /path/to/framework/skills/soc-project-query-setup/
 ```
 
 ---
@@ -178,21 +178,21 @@ Copy into each framework's skills directory:
 
 | Framework | Target path |
 |-----------|------------|
-| `.ai` | `/mnt/work/Projects/.ai/skills/project-query-setup/skill.md` |
-| `.ai.ui` | `/mnt/work/Projects/.ai.ui/skills/project-query-setup/skill.md` |
-| `.ai.biz` | `/mnt/work/Projects/.ai.biz/skills/project-query-setup/skill.md` |
-| `.ai.soc` | `/mnt/work/Projects/.ai.soc/skills/project-query-setup/skill.md` |
+| `.ai` | `/mnt/work/Projects/.ai/skills/soc-project-query-setup/skill.md` |
+| `.ai.ui` | `/mnt/work/Projects/.ai.ui/skills/soc-project-query-setup/skill.md` |
+| `.ai.biz` | `/mnt/work/Projects/.ai.biz/skills/soc-project-query-setup/skill.md` |
+| `.ai.soc` | `/mnt/work/Projects/.ai.soc/skills/soc-project-query-setup/skill.md` |
 
 Then register in each framework's `skills/README.md`:
 
 ```markdown
-| `project-query-setup` | Guide through tools-project key creation, MCP registration, connectivity test, and OS-specific usage patterns |
+| `soc-project-query-setup` | Guide through tools-project key creation, MCP registration, connectivity test, and OS-specific usage patterns |
 ```
 
 And add to each framework's `.cursorrules` § Skills table:
 
 ```markdown
-| project-query-setup | `/mnt/work/Projects/.ai/skills/project-query-setup/` | Guided setup: API key creation, MCP registration, connectivity test. OS-aware (adapts guidance per OS). |
+| soc-project-query-setup | `/mnt/work/Projects/.ai/skills/soc-project-query-setup/` | Guided setup: API key creation, MCP registration, connectivity test. OS-aware (adapts guidance per OS). |
 ```
 
 ---
@@ -201,14 +201,14 @@ And add to each framework's `.cursorrules` § Skills table:
 
 After deploying to a framework:
 
-- [ ] `project-query-setup/skill.md` copied to framework's `skills/`
+- [ ] `soc-project-query-setup/skill.md` copied to framework's `skills/`
 - [ ] Skill registered in framework's `skills/README.md`
 - [ ] Skill registered in framework's `.cursorrules` (or equivalent)
 - [ ] MCP server copied to consuming project's `.opencode/mcp/project-mcp/`
 - [ ] MCP block added to consuming project's `opencode.json`
 - [ ] `~/.tools-project-key` created with `chmod 600`
 - [ ] Live query returns `{ "ok": true, "data": [...] }`
-- [ ] Agent calls `@project-query-setup status` and sees green
+- [ ] Agent calls `@soc-project-query-setup status` and sees green
 - [ ] One OS-specific skill declares MCP tools as prerequisite and uses them in a protocol step
 
 ---
@@ -217,7 +217,7 @@ After deploying to a framework:
 
 | File | Location | Purpose |
 |------|----------|---------|
-| `skill.md` | Each framework's `skills/project-query-setup/` | The guided setup skill |
+| `skill.md` | Each framework's `skills/soc-project-query-setup/` | The guided setup skill |
 | `mcp_server.py` | Consuming project's `.opencode/mcp/project-mcp/` | The MCP stdio bridge |
 | `opencode.json` | Consuming project root | MCP server registration |
 | `~/.tools-project-key` | User's home directory | API key (chmod 600) |

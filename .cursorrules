@@ -233,7 +233,7 @@ When deployed as a thin-client (via `@deploy-basic`), the `.cursorrules` carries
 | soc-director | Run penetration tests against targets (local code, URLs, domains) |
 | soc-gateway | Run .ai.soc from source without system install |
 | session-soc | SOC session bookend; start/close/status/context; updates HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC |
-| project-query-setup | Guided setup: tools-project API key, MCP registration, connectivity test. OS-aware. |
+| soc-project-query-setup | Guided setup: tools-project API key, MCP registration, connectivity test. OS-aware. |
 
 **Sessions:** `@session-soc` — opens and closes SOC sessions
 
