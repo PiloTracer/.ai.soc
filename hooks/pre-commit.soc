@@ -1,0 +1,40 @@
+#!/bin/sh
+# pre-commit.soc — SOC change-safety gate (warn-only by default).
+# Installed as .git/hooks/pre-commit.soc by install-git-hooks.sh.
+# Coexists with other frameworks via a dispatcher.
+
+WARN_ONLY="${WARN_ONLY:-1}"
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "${HOOK_DIR}/../.." && pwd)"
+
+# Resolve scripts directory: try SOC_SOURCE env, then .cursorrules pointer, then local
+SCRIPTS=""
+SOC_SOURCE="${SOC_SOURCE:-}"
+if [ -z "$SOC_SOURCE" ] && [ -f "${REPO_ROOT}/.cursorrules" ]; then
+  SOC_SOURCE="$(grep -oE 'SOC_SOURCE=[^ ]+' "${REPO_ROOT}/.cursorrules" 2>/dev/null | head -1 | cut -d= -f2-)"
+fi
+if [ -n "$SOC_SOURCE" ] && [ -d "${SOC_SOURCE}/scripts" ]; then
+  SCRIPTS="${SOC_SOURCE}/scripts"
+elif [ -d "${REPO_ROOT}/scripts" ]; then
+  SCRIPTS="${REPO_ROOT}/scripts"
+elif [ -d "${REPO_ROOT}/.ai.soc/scripts" ]; then
+  SCRIPTS="${REPO_ROOT}/.ai.soc/scripts"
+else
+  exit 0
+fi
+
+for check in touch-scope-verify blast-radius-check; do
+  if [ -f "${SCRIPTS}/${check}.sh" ]; then
+    if ! "${SCRIPTS}/${check}.sh"; then
+      MSG="  SCRIPTS/${check}.sh"
+      if [ "$WARN_ONLY" = "1" ]; then
+        echo "WARN: ${MSG}"
+      else
+        echo "FAIL: ${MSG}" >&2
+        exit 1
+      fi
+    fi
+  fi
+done
+
+exit 0

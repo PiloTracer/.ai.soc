@@ -1,0 +1,22 @@
+#!/bin/sh
+# prepare-commit-msg.soc — Auto-prepend task ref (SOC-###) from branch name.
+
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "${HOOK_DIR}/../.." && pwd)"
+
+BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || true)"
+case "${2:-}" in
+  message|commit|template)
+    REF="$(echo "$BRANCH" | grep -oE '[A-Z]+-[0-9]+' | head -1)"
+    if [ -z "$REF" ] && [ -f "${REPO_ROOT}/.work.soc/active-ref" ]; then
+      REF="$(head -1 "${REPO_ROOT}/.work.soc/active-ref")"
+    fi
+    if [ -n "$REF" ]; then
+      FIRST="$(head -1 "$1")"
+      case "$FIRST" in
+        [A-Z]*-[0-9]*:*) ;;
+        *) sed -i "1s/^/${REF}: /" "$1" ;;
+      esac
+    fi
+    ;;
+esac

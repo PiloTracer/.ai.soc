@@ -32,6 +32,8 @@ Portable, tool-agnostic workflows for security operations. Each skill is a folde
 
 **Orientation:** `@session-soc context` or read `.work.soc/context/HANDOFF_SOC.md`.
 
+**Skill dependencies and vocabulary:** see [`SKILL_DEPENDENCIES.md`](SKILL_DEPENDENCIES.md) for prerequisites, blocked-report shape, and canonical verbs.
+
 ---
 
 ## Work tree paths

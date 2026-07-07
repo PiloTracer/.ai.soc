@@ -37,6 +37,16 @@ while IFS= read -r d; do
 done < <(find "$SOC_ROOT/skills" -mindepth 1 -maxdepth 1 -type d ! -name '.*' | sort)
 ok "${skill_count} skills present"
 
+note "Change-safety gate scripts"
+for check in touch-scope-verify blast-radius-check gate-verify; do
+  script="${SOC_ROOT}/scripts/${check}.sh"
+  if [[ -f "$script" ]]; then
+    bash "$script" --self-test >/dev/null && ok "${check}.sh self-test" || die "${check}.sh self-test failed"
+  else
+    die "missing scripts/${check}.sh"
+  fi
+done
+
 note "deploy-files in-place scaffold"
 DF_SMOKE="$(mktemp -d)"
 pushd "$DF_SMOKE" >/dev/null

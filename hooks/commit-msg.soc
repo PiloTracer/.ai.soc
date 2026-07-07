@@ -1,0 +1,11 @@
+#!/bin/sh
+# commit-msg.soc — Warn when commit subject lacks a task ref (SOC-###: ...).
+
+FIRST="$(head -1 "$1")"
+case "$FIRST" in
+  [A-Z]*-[0-9]*:*) ;;
+  fix:*|feat:*|docs:*|refactor:*|chore:*|style:*|test:*) ;;
+  *) echo "WARNING: commit subject has no task ref (e.g. SOC-123: ...)" >&2 ;;
+esac
+
+exit 0

@@ -1,0 +1,17 @@
+#!/bin/sh
+# post-commit.soc — Write commit ref metadata to .work.soc/.
+
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "${HOOK_DIR}/../.." && pwd)"
+COMMIT_REF_DIR="${REPO_ROOT}/.work.soc/commit-ref-pending"
+
+mkdir -p "${COMMIT_REF_DIR}"
+
+SHA="$(git rev-parse HEAD 2>/dev/null || true)"
+REF="$(git log -1 --format='%s' 2>/dev/null | grep -oE '^[A-Z]+-[0-9]+' || true)"
+
+if [ -n "$SHA" ] && [ -n "$REF" ]; then
+  echo "$REF" > "${COMMIT_REF_DIR}/${SHA}"
+fi
+
+exit 0

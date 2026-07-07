@@ -24,6 +24,21 @@ These principles override all other instructions. They are non-negotiable.
 - If any test fails, any build step errors, or any validation check fails, report the failure explicitly with the relevant output.
 - The number one priority is reliable, efficient, consistent code. Honesty about failures is the only way to achieve that.
 
+## Change safety
+
+Run before commit / before claiming completion:
+
+| Gate | Command | Fail when |
+|------|---------|-----------|
+| Touch scope | `bash scripts/touch-scope-verify.sh` | File outside `.work.soc/touch-scope` |
+| Blast radius | `bash scripts/blast-radius-check.sh` | Cross-area diff ≥3 areas |
+| Gate check | `bash scripts/gate-verify.sh` | Done task with empty Notes |
+| Framework verify | `bash scripts/framework-verify.sh` | Non-zero exit |
+
+**Declare scope first:** Create `.work.soc/touch-scope` with allowed paths.
+
+---
+
 ### 3. Verify Code Actually Works Before Claiming Done
 - Do not tell the user a task is complete until you have verified the code works.
 - Run tests, builds, linting, or whatever verification is appropriate for the change.

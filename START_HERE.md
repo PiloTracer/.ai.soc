@@ -75,3 +75,10 @@ Source `.ai.soc` is never modified. Only the target receives changes.
 | 3 | `.work.soc/plans/NEXT_SOC.md` |
 | 4 | `.work.soc/plans/UNKNOWNS_SOC.md` |
 | 5 | `skills/README.md` |
+| 6 | `skills/SKILL_DEPENDENCIES.md` |
+
+## 5. Quick cheat-sheets
+
+- **Session lifecycle:** `.quick/session-lifecycle.md`
+- **Director handles:** `.quick/directors.md`
+- **Deploy to a project:** `.quick/deploy-to-project.md`
