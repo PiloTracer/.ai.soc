@@ -42,4 +42,12 @@ The agent MUST resolve `.ai.soc/` references from `$SOC_SOURCE` (thin-client mod
 
 **Sessions:** `@session-soc` — opens and closes SOC sessions
 
+### Data Loss Prevention (SOC deploy invariant)
+
+**Permission scope:** Explicit human/operator permission authorizes **only the current request / current case**. It is never standing or permanent. Prior approval does not authorize a later destructive action.
+
+- **Git:** NEVER `git commit` or `git push` unless explicitly requested in the **same message**. NEVER amend, rebase, rewrite history, `reset --hard`, `clean -fd`/`-fdx`, or force-push unless explicitly requested in the **same message**.
+- **Files:** NEVER delete/unlink/`rm` files or directories unless explicitly requested in the **same message**. Narrow exception: agent-created ephemeral files under `tmp/` (or designated temp dir) created by this agent in the **current session**.
+- **Databases / persistent stores:** NEVER `DROP`, `TRUNCATE`, wipe, factory-reset, mass-delete, or run destructive down-migrations; NEVER remove/prune Docker/Podman volumes or data dirs holding persistent state — unless explicitly requested in the **same message**.
+
 <!-- SOC_DESIGN_OS_END -->

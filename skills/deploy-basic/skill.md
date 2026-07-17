@@ -106,13 +106,14 @@ After I1 (no-overwrite) the skill:
 
 | Class | Merge rule |
 |-------|------------|
-| `.cursorrules` SOC block | Update framework sections (Skills table, Source resolution, Context files). Preserve target customizations. Never wholesale-replace. |
+| `.cursorrules` SOC block | Update framework sections (Skills table, Source resolution, Context files, **Data Loss Prevention**). Preserve target customizations. Never wholesale-replace. |
 | `.work.soc/<file>` | Append new template sections absent in target; **preserve all user content** (HANDOFF rows, NEXT iteration blocks, UNKNOWNS entries). |
 | `.work.soc/<dir>/.gitkeep` + new scaffold dirs | Create any NEW scaffold dir that didn't exist; do not touch existing. |
 
 ### Preserve invariants (never drop)
 - Target's filled content in `.work.soc/` files (HANDOFF dates, NEXT tasks, UNKNOWNS entries).
 - Target's `SOC_SOURCE` line, in-place value (synced, not reset to `REPLACE_SOCSOURCE`).
+- Target's **Data Loss Prevention** section in the SOC block (git / files / databases rules + per-case permission scope) — merge forward from source template if missing; never delete.
 - Target's git history, `.gitignore`, app code — all untouched.
 
 ---

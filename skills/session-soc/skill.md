@@ -40,6 +40,8 @@ description: >-
 
 **Aliases:** `begin`, `open` → start; `end`, `handoff` → close.
 
+**Git permission scope:** `commit` / `push` modifiers authorize **only that close invocation**. They are never standing permission for later commits or pushes. Absent those modifiers in the **same message**, draft the commit message only — do not run `git commit` or `git push`.
+
 ---
 
 ## I1 — Start mode
@@ -73,8 +75,8 @@ description: >-
    - Updated unknowns
 3. Update `{NEXT_SOC}` with revised priorities.
 4. Update `{UNKNOWNS_SOC}` — resolve any that were answered, add new ones.
-5. **If `commit` modifier:** Before staging, scan for secret paths (`.env`, `credentials/`, `*.pem`, `*.key`). If any match → abort commit; report failure. Stage safe paths via explicit `git add` of changed files (not `git add -A`). Commit with message. Show SHA + `git status -sb`.
-6. **If `push` modifier:** `git push` after successful commit.
+5. **If `commit` modifier (this invocation only):** Before staging, scan for secret paths (`.env`, `credentials/`, `*.pem`, `*.key`). If any match → abort commit; report failure. Stage safe paths via explicit `git add` of changed files (not `git add -A`). Commit with message. Show SHA + `git status -sb`.
+6. **If `push` modifier (this invocation only; requires `commit`):** `git push` after successful commit. Do not push unless `push` appears in the **same** close message.
 7. Confirm: *"SOC session closed. HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC updated."*
 
 ---
