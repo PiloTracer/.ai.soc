@@ -14,6 +14,7 @@ from strix.report.writer import (
     read_run_record,
     write_executive_report,
     write_run_record,
+    write_sarif,
     write_vulnerabilities,
 )
 from strix.telemetry import posthog, scarf
@@ -334,6 +335,7 @@ class ReportState:
 
             if self.vulnerability_reports:
                 write_vulnerabilities(run_dir, self.vulnerability_reports, self._saved_vuln_ids)
+                write_sarif(run_dir, self.vulnerability_reports)
 
             write_run_record(run_dir, self.run_record)
 

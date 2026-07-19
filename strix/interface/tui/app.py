@@ -747,6 +747,10 @@ class StrixTUIApp(App):  # type: ignore[misc]
             "scope_mode": getattr(args, "scope_mode", "auto"),
             "diff_base": getattr(args, "diff_base", None),
             "resume_instruction": getattr(args, "user_explicit_instruction", None) or "",
+            "i_have_authorization": bool(getattr(args, "i_have_authorization", False)),
+            "authorization_confirmed_interactively": bool(
+                getattr(args, "authorization_confirmed_interactively", False)
+            ),
         }
 
     def _setup_cleanup_handlers(self) -> None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import json
 import logging
+import re
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
@@ -15,7 +16,26 @@ from strix.core.paths import run_record_path
 
 logger = logging.getLogger(__name__)
 
-_SEVERITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+# Public: reused by strix.interface.main for --fail-on severity-threshold comparisons
+# (SOC-008-F), so this stays the single source of truth for severity ranking.
+SEVERITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+
+# SOC-008-E: SARIF 2.1.0, for CI / GitHub code scanning ingestion. Verified
+# against the minimum shape GitHub's code-scanning ingestion requires
+# (docs.github.com/.../sarif-support + the OASIS SARIF 2.1.0 spec,
+# checked 2026-07-18): ``$schema`` + ``version`` +
+# ``runs[].tool.driver.{name,rules[]}`` + ``runs[].results[]``.
+_SARIF_SCHEMA_URI = "https://json.schemastore.org/sarif-2.1.0.json"
+_SARIF_VERSION = "2.1.0"
+_SARIF_TOOL_NAME = "ai-soc"
+
+_SEVERITY_TO_SARIF_LEVEL = {
+    "critical": "error",
+    "high": "error",
+    "medium": "warning",
+    "low": "note",
+    "info": "note",
+}
 
 
 def read_run_record(run_dir: Path) -> dict[str, Any]:
@@ -66,7 +86,7 @@ def write_vulnerabilities(
 
     sorted_reports = sorted(
         vulnerability_reports,
-        key=lambda r: (_SEVERITY_ORDER.get(r["severity"], 5), r["timestamp"]),
+        key=lambda r: (SEVERITY_ORDER.get(r["severity"], 5), r["timestamp"]),
     )
     csv_path = run_dir / "vulnerabilities.csv"
     with csv_path.open("w", encoding="utf-8", newline="") as f:
@@ -97,6 +117,95 @@ def write_vulnerabilities(
         )
     logger.info("Updated vulnerability index: %s", csv_path)
     return len(new_reports)
+
+
+def _sarif_rule_id(report: dict[str, Any]) -> str:
+    cwe = report.get("cwe")
+    if cwe:
+        return str(cwe)
+    slug = re.sub(r"[^a-z0-9]+", "-", str(report.get("title", "")).lower()).strip("-")
+    return slug or "untitled-finding"
+
+
+def _sarif_locations(report: dict[str, Any]) -> list[dict[str, Any]]:
+    """Physical locations for a SARIF result.
+
+    Prefers ``code_locations`` (white-box findings with file/line evidence);
+    falls back to a bare ``artifactLocation`` on ``target`` (black-box web
+    findings with no source line) so every finding still gets *a* location.
+    """
+    locations: list[dict[str, Any]] = []
+    code_locations: list[dict[str, Any]] = report.get("code_locations") or []
+    for loc in code_locations:
+        file_path = loc.get("file")
+        if not file_path:
+            continue
+        physical_location: dict[str, Any] = {"artifactLocation": {"uri": file_path}}
+        region: dict[str, Any] = {}
+        if loc.get("start_line") is not None:
+            region["startLine"] = loc["start_line"]
+        if loc.get("end_line") is not None:
+            region["endLine"] = loc["end_line"]
+        if region:
+            physical_location["region"] = region
+        locations.append({"physicalLocation": physical_location})
+
+    if locations:
+        return locations
+
+    target = report.get("target")
+    if target:
+        return [{"physicalLocation": {"artifactLocation": {"uri": str(target)}}}]
+    return []
+
+
+def write_sarif(run_dir: Path, vulnerability_reports: list[dict[str, Any]]) -> None:
+    """Write ``vulnerabilities.sarif`` (SARIF 2.1.0) alongside the existing
+    ``.md``/``.csv``/``.json`` artifacts, for CI / GitHub code scanning
+    ingestion. No new dependency — a hand-built dict serialized via
+    ``json.dumps``, same pattern as the other writers in this module.
+    """
+    rules_by_id: dict[str, dict[str, Any]] = {}
+    results: list[dict[str, Any]] = []
+
+    for report in vulnerability_reports:
+        rule_id = _sarif_rule_id(report)
+        rules_by_id.setdefault(
+            rule_id,
+            {
+                "id": rule_id,
+                "shortDescription": {"text": str(report.get("title", "Untitled finding"))},
+            },
+        )
+
+        severity = str(report.get("severity", "medium")).lower()
+        result: dict[str, Any] = {
+            "ruleId": rule_id,
+            "level": _SEVERITY_TO_SARIF_LEVEL.get(severity, "warning"),
+            "message": {"text": str(report.get("description") or report.get("title") or "")},
+        }
+        locations = _sarif_locations(report)
+        if locations:
+            result["locations"] = locations
+        cvss = report.get("cvss")
+        if cvss is not None:
+            result["properties"] = {"security-severity": str(cvss)}
+        results.append(result)
+
+    sarif_log = {
+        "$schema": _SARIF_SCHEMA_URI,
+        "version": _SARIF_VERSION,
+        "runs": [
+            {
+                "tool": {"driver": {"name": _SARIF_TOOL_NAME, "rules": list(rules_by_id.values())}},
+                "results": results,
+            },
+        ],
+    }
+
+    sarif_path = run_dir / "vulnerabilities.sarif"
+    _atomic_write_text(sarif_path, json.dumps(sarif_log, ensure_ascii=False, indent=2, default=str))
+    logger.info("Updated SARIF export: %s", sarif_path)
 
 
 def _atomic_write_text(path: Path, payload: str) -> None:

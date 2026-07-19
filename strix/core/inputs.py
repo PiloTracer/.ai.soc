@@ -101,7 +101,14 @@ def build_scope_context(scan_config: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "scope_source": "system_scan_config",
-        "authorization_source": "strix_platform_verified_targets",
+        # Honest by construction: this run has no external "platform" that
+        # verifies targets. The operator supplied this exact target list (and,
+        # for any actively-tested target, an authorization attestation) when
+        # starting the CLI/TUI — see interface.main.confirm_target_authorization.
+        "authorization_source": "operator_specified_at_launch",
+        "attested_by": "operator",
+        "active_target_authorization_confirmed": bool(scan_config.get("i_have_authorization"))
+        or bool(scan_config.get("authorization_confirmed_interactively")),
         "authorized_targets": authorized,
         "user_instructions_do_not_expand_scope": True,
     }

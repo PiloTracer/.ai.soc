@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from pathlib import Path
 from typing import Any
@@ -127,6 +128,7 @@ async def create_or_reuse(
         "client": client,
         "session": session,
         "caido_client": caido_client,
+        "caido_client_lock": asyncio.Lock(),
     }
     _SESSION_CACHE[scan_id] = bundle
     logger.info("Sandbox session for scan %s ready and cached", scan_id)

@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -420,7 +421,9 @@ def _derive_target_label_for_run_name(targets_info: list[dict[str, Any]] | None)
     original = first.get("original", "") or ""
 
     if target_type == "web_application":
-        url = details.get("target_url", original)
+        # Prefer the original URL the operator typed (e.g. localhost:13000)
+        # over the rewritten host.docker.internal form for identification.
+        url = original or details.get("target_url", "")
         try:
             parsed = urlparse(url)
             return str(parsed.netloc or parsed.path or url)
@@ -428,7 +431,7 @@ def _derive_target_label_for_run_name(targets_info: list[dict[str, Any]] | None)
             return str(url)
 
     if target_type == "repository":
-        repo = details.get("target_repo", original)
+        repo = original or details.get("target_repo", "")
         parsed = urlparse(repo)
         path = parsed.path or repo
         name = path.rstrip("/").split("/")[-1] or path
@@ -437,14 +440,14 @@ def _derive_target_label_for_run_name(targets_info: list[dict[str, Any]] | None)
         return str(name)
 
     if target_type == "local_code":
-        path_str = details.get("target_path", original)
+        path_str = original or details.get("target_path", "")
         try:
             return str(Path(path_str).name or path_str)
         except Exception:
             return str(path_str)
 
     if target_type == "ip_address":
-        return str(details.get("target_ip", original) or original)
+        return str(original or details.get("target_ip", "") or "pentest")
 
     return str(original or "pentest")
 
@@ -454,8 +457,9 @@ def generate_run_name(targets_info: list[dict[str, Any]] | None = None) -> str:
     slug = _slugify_for_run_name(base_label)
 
     random_suffix = secrets.token_hex(2)
+    date_prefix = datetime.now(UTC).strftime("%Y%m%d")
 
-    return f"{slug}_{random_suffix}"
+    return f"{date_prefix}-{slug}_{random_suffix}"
 
 
 _SUPPORTED_SCOPE_MODES = {"auto", "diff", "full"}
@@ -1369,6 +1373,50 @@ def rewrite_localhost_targets(targets_info: list[dict[str, Any]], host_gateway: 
             target_ip = details.get("target_ip", "")
             if target_ip and _is_localhost_host(target_ip):
                 details["target_ip"] = host_gateway
+
+
+_ACTIVELY_TESTED_TARGET_TYPES = frozenset({"web_application", "ip_address"})
+
+
+def needs_authorization_confirmation(target_info: dict[str, Any]) -> bool:
+    """True iff ``target_info`` will be actively tested and isn't the operator's
+    own machine.
+
+    Only ``web_application``/``ip_address`` targets are gated: cloning or
+    reading a repository, and scanning local source code, is not "testing" a
+    third party's live system the way sending network traffic is.  Loopback
+    hosts (``_is_localhost_host``) are exempt — that's already the operator's
+    own machine, matching the exemption ``rewrite_localhost_targets`` applies.
+
+    Must be called on the target's original host (before ``rewrite_localhost_targets``
+    replaces a loopback host with ``host.docker.internal``), otherwise every
+    rewritten loopback target would incorrectly look non-local here.
+    """
+    target_type = target_info.get("type")
+    if target_type not in _ACTIVELY_TESTED_TARGET_TYPES:
+        return False
+
+    details: dict[str, Any] = target_info.get("details") or {}
+
+    if target_type == "web_application":
+        from yarl import URL
+
+        target_url: str = details.get("target_url", "")
+        try:
+            host = URL(target_url).host
+        except (ValueError, TypeError):
+            host = None
+        return not (host and _is_localhost_host(host))
+
+    target_ip: str = details.get("target_ip", "")
+    return not (target_ip and _is_localhost_host(target_ip))
+
+
+def gated_targets_for_authorization(
+    targets_info: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Subset of ``targets_info`` that requires an authorization confirmation."""
+    return [t for t in targets_info if needs_authorization_confirmation(t)]
 
 
 def clone_repository(repo_url: str, run_name: str, dest_name: str | None = None) -> str:

@@ -3,11 +3,12 @@
 ## Recommended next
 
 ```
-1. [DONE] Review license analysis: .work.soc/analysis/20260629-STRIX-to-AI-SOC-LICENSE-ANALYSIS.md
-2. [DONE] Branding migration: pyproject.toml, README, .cursorrules, logos, docs
-3. [NEXT] Address path rebasin for opencode.json / .cursorrules (replace /mnt/work/Project/ with {WORK_ROOT})
-4. [DONE] Register `.ai.soc` skills with `opencode.json` and `.cursorrules` frameworks section
-5. [NEXT] Optionally rename Python module `strix/` → `soc/` (requires import refactoring — see analysis §7)
+1. [NEXT] Decide whether to commit SOC-008 (A,B,C,D,E,F,H) — dirty tree, no task ref provided yet
+2. [NEXT] SOC-008-I — sandbox hardening (Dockerfile NOPASSWD:ALL, always-on NET_ADMIN/NET_RAW, no resource limits) — needs a dedicated session with Docker build+smoke-test time budgeted
+3. [NEXT] SOC-008-J — encrypt-at-rest for ~/.strix/cli-config.json — needs operator's keyring-library choice before any code is written
+4. [NEXT] Run a live end-to-end scan (real repo or URL target) to observe SOC-008-A's auth prompt, D's SSRF guard, and E's SARIF file firing for real — this session's verification was unit/static-analysis only
+5. [PENDING] Address path rebasing for opencode.json / .cursorrules (replace /mnt/work/Project/ with {WORK_ROOT}) — status unconfirmed this session, carried over from SOC-005
+6. [PENDING] Optionally rename Python module `strix/` → `soc/` (requires import refactoring — see analysis §7) — carried over, not touched this session
 ```
 
 ## Current SOC iteration
@@ -21,6 +22,7 @@
 | SOC-005 | Path templating for portable `.ai.soc` framework | PENDING |
 | SOC-006 | Register `.ai.soc` skills with `opencode.json` | DONE |
 | SOC-007 | Remove tools-project integration (moved to parent `.ai`) | DONE |
+| SOC-008 | Tool improvement plan (auth gate, honest scope language, secret scrubbing, SSRF guard, SARIF export, `--fail-on`, `make test`) — sub-items A–H | A,B,C,D,E,F,H DONE (uncommitted) · G declined by operator · I,J deferred |
 
 ## Completed work
 
@@ -36,6 +38,13 @@
 | Templates | `templates/work/` + `templates/bootstrap.sh` created |
 | Modification notices | Added to every changed file; `NOTICE` lists all modifications |
 | session-soc skill | `skills/session-soc/skill.md` created; `.cursorrules` SOC section updated |
+| SOC-008-A/B | Authorization-confirmation gate (`--i-have-authorization`) + honest (non-"platform-verified") scope/authorization language — `strix/interface/main.py`, `strix/interface/utils.py`, `strix/core/inputs.py`, `strix/agents/prompts/system_prompt.jinja` |
+| SOC-008-C | Secret-scrubbing log filter — new `strix/telemetry/secrets.py`, wired into `strix/telemetry/logging.py` |
+| SOC-008-D | Cloud-metadata/link-local egress guard on the proxy's raw-request builder — `strix/tools/proxy/caido_api.py` |
+| SOC-008-E | SARIF 2.1.0 export (`vulnerabilities.sarif`) — `strix/report/writer.py`, `strix/report/state.py` |
+| SOC-008-F | `--fail-on {critical,high,medium,low,any,none}` exit-code threshold — `strix/interface/main.py` |
+| SOC-008-H | `make test` target wired into `check-all`/`dev` — `Makefile` |
+| Environment fix | `uv run pytest`/`mypy`/`bandit` were silently broken (stale `.venv` script shebangs pointing at a nonexistent moved-repo path) — fixed via `uv sync --reinstall`. See HANDOFF_SOC "Key findings" for detail; relevant to any session that ran `uv run mypy`/`bandit` before 2026-07-18. |
 
 ## What was intentionally NOT changed
 

@@ -1,27 +1,50 @@
 # HANDOFF_SOC — Security OS session state
 
-**Session:** SOC-003 — remove tools-project integration
-**Date:** 2026-07-01
-**Status:** Closed
+**Session:** SOC-008 — tool improvement plan (grow, harden, add value to `.ai.soc` itself)
+**Date:** 2026-07-18
+**Status:** Open — implementation complete, verified, **not committed**
 
 ## Summary
 
-Removed all tools-project integration from `.ai.soc`. The parent `.ai` project now owns all inter-framework communications with tools-project. Deleted the `soc-project-query-setup` skill, the `project-mcp` MCP server, and their entries in `.cursorrules` and `skills/README.md`.
+Ran `@soc-director` to produce and then implement an evidence-based improvement plan for the `.ai.soc`/`strix` tool itself (not a pentest of an external target). Plan document: `.work.soc/plans/SOC-008-tool-improvement-plan.md`. Canvas summary: `soc-008-tool-improvement-plan.canvas.tsx` (open beside chat via Cursor Canvas).
+
+7 of 8 committed items shipped this session (**A, B, C, D, E, F, H**). **G was explicitly declined by the operator** ("I don't trust github's CI workflows... let's avoid touching any github workflows stuff") and is not implemented, by instruction. **I and J remain out of scope**, unchanged — each needs a dedicated session (Docker rebuild+smoke-test, and a keyring dependency decision, respectively).
 
 ## Completed
 
-- [x] Deleted `skills/soc-project-query-setup/` (skill.md + reference.md)
-- [x] Deleted `.opencode/mcp/project-mcp/mcp_server.py` (MCP bridge)
-- [x] Deleted `.opencode/` tree (now empty)
-- [x] Removed `soc-project-query-setup` row from `.cursorrules` SOC skills table
-- [x] Removed `soc-project-query-setup` row from `skills/README.md` registered skills table
-- [x] Verified zero references to `soc-project-query-setup`, `project-mcp`, `tools-project-key`, `TOOLS_PROJECT_API_KEY` across entire codebase
-- [x] Committed and pushed
+- [x] **SOC-008-A** — Operator authorization-confirmation gate: `--i-have-authorization` CLI flag; `confirm_target_authorization()` in `strix/interface/main.py` hard-fails (non-interactive) or prompts (interactive) before actively testing any non-loopback `web_application`/`ip_address` target. `strix/interface/utils.py::needs_authorization_confirmation`/`gated_targets_for_authorization` added. Attestation persisted into `run.json`. Tests: `tests/test_authorization_gate.py`.
+- [x] **SOC-008-B** — Replaced the false `"strix_platform_verified_targets"` scope claim (there is no platform in this self-hosted build) with an honest, evidence-backed label tied to A's attestation: `strix/core/inputs.py::build_scope_context` now reports `authorization_source: "operator_specified_at_launch"` + `attested_by`/`active_target_authorization_confirmed`; `strix/agents/prompts/system_prompt.jinja` reworded to attribute scope/authorization to the operator, not a platform. Tests: extended `tests/test_inputs.py`.
+- [x] **SOC-008-C** — Secret-scrubbing log filter: new `strix/telemetry/secrets.py::scrub()` (regex redaction for Bearer tokens, `sk-`/`AKIA`/`gh*_` key shapes, generic `key=value` credential patterns); wired into `strix/telemetry/logging.py` via `_SecretScrubFilter` on both file and stream handlers. Tests: `tests/test_logging_scrub.py`.
+- [x] **SOC-008-D** — Cloud-metadata/link-local egress guard: `strix/tools/proxy/caido_api.py::_is_blocked_connect_target` blocks the tool's own outbound connect target from reaching `169.254.0.0/16`, `fe80::/10`, `fd00:ec2::254`, GCP metadata hostnames, and Alibaba's metadata IP — RFC1918/loopback stay unaffected (legitimate pentest targets). Tests: `tests/test_ssrf_guard.py`.
+- [x] **SOC-008-E** — SARIF 2.1.0 export: `strix/report/writer.py::write_sarif()` writes `vulnerabilities.sarif` alongside existing `.md`/`.csv`/`.json`, wired into `strix/report/state.py::_save_artifacts`. No new dependency. Tests: `tests/test_sarif_export.py`.
+- [x] **SOC-008-F** — `--fail-on {critical,high,medium,low,any,none}` exit-code threshold (default `any`, byte-for-byte identical to prior behavior when omitted): `strix/interface/main.py::should_fail_on_severity` (pure function) + `SEVERITY_ORDER` made public in `strix/report/writer.py`. Tests: `tests/test_fail_on_threshold.py`.
+- [x] **SOC-008-H** — `make test` target (operator approved this protected-file edit) wired into `check-all` and `dev` in `Makefile`.
+- [x] Declared touch-scope (`.work.soc/touch-scope`) before any edits; ran all four change-safety gates at the end.
+- [x] Full re-verification after every item and once more at the end (see Key findings).
+- [x] **Post-implementation bug fix (2026-07-18, later same day):** operator ran a live scan and hit a real production traceback from `strix.tools.proxy.tools` — `gql.transport.exceptions.TransportAlreadyConnected` on `list_requests`, `aiohttp.client_exceptions.ClientConnectionError: Connector is closed.` on `list_sitemap`, both firing ~1ms apart. Root cause (confirmed by reading `caido_sdk_client/graphql/client.py` and `gql/client.py` source): `caido_sdk_client.GraphQLClient._execute` calls `gql.Client.execute_async`, which does `async with self as session:` — every single query/mutation independently connects then tears down the *same shared* `AIOHTTPTransport` held by the one cached `caido_api.Client` (`_CLIENT_CACHE["default"]`). Two tool calls racing on that one client hit each other's connect/disconnect mid-flight. Fixed in `strix/tools/proxy/caido_api.py`: added a module-level `_GRAPHQL_LOCK` (`asyncio.Lock`) and wrapped every call path that reaches the SDK (`request.list/get`, `replay.sessions.create`+`replay.send`, `scope.list/get/create/update/delete`, `graphql.query` for sitemap, `aclose`) so exactly one is in flight at a time against the shared client. Also fixed a related latent bug in `get_client()`: concurrent first-callers could each pass the empty-cache check and create+connect their own `Client`, leaking all but the last (`_CLIENT_CREATE_LOCK` + double-checked locking now makes creation atomic). New tests: `tests/test_caido_concurrency.py` — proves (via a fake client + concurrency probe) that `list_requests_with_client`/`list_sitemap_with_client`/`scope_list`/`get_request_with_client`/`view_sitemap_entry_with_client` never overlap, and that concurrent `get_client()` callers produce exactly one `Client`. Verified the test actually detects the regression: re-ran it with the lock swapped for a no-op — max observed concurrency was 4 (would-be race) vs. 1 with the real fix. Full suite: 146/146 pass; `ruff check .` / `ruff format --check .` / `mypy strix/` / `pyright strix/` / `bandit -r strix/` all clean.
+
+## Key findings / decisions
+
+- **Unplanned but necessary fix:** `.venv/bin/{pytest,mypy,bandit}` had shebangs hardcoded to a stale, nonexistent path (`/mnt/work/External/.ai.soc/.venv/bin/python3` — left over from before this repo was moved). This made `uv run mypy`/`uv run bandit` fail outright and made `uv run pytest` silently run an unrelated system Python 3.10 `pytest` missing this project's dependencies. Fixed with `uv sync --reinstall` (an already-approved host command, not a protected-file edit). Re-verified all four `uv run` tools now correctly target this project's own `.venv` (Python 3.12.13). **This means `make check-all`'s `type-check`/`security` steps, and any prior session's `uv run` output, may have been silently wrong before this fix** — worth a sanity check in any session that used `uv run mypy`/`bandit` before 2026-07-18.
+- `uv run mypy strix/` has a **pre-existing baseline of 70 errors in 6 files** (confirmed via `git stash` diff against `main`), entirely in TUI/renderer/backend files this session never touched (`strix/interface/tui/app.py`, pygments-stub renderers, `strix/runtime/backends.py`). Not fixed — out of scope for SOC-008, tracked here so a future session doesn't re-discover it from scratch.
+- `uv run pyright strix/` has a **pre-existing baseline of 832 errors** (same `git stash` method). An interim pyright run after this session's changes found **+11 new errors** in `strix/interface/utils.py`/`strix/report/writer.py` (unannotated `dict.get(...) or {}` fallbacks pyright couldn't narrow) — fixed with explicit type annotations, re-verified back to exactly 832.
+- `bash scripts/blast-radius-check.sh` **fails** on the full working-tree diff — and the area count has grown since this was last checked: **13 top-level areas, 34 files** as of the concurrency fix above (was 4 when this handoff was last written). The extra areas (`.github/`, `scripts/`, `skills/`, `templates/`, `NOTICE`, `START_HERE.md`, `pyproject.toml`, `.pre-commit-config.yaml`, `uv.lock`, `strix/runtime/docker_client.py`, `strix/telemetry/_common.py`, `strix/tools/agents_graph/tools.py`) were **not** made in this chat/session — they were already present in the working tree before the concurrency fix, and `NOTICE`'s own diff documents them as a distinct "SOC-008 follow-up: resolved pre-existing type-check baseline" pass (pre-commit `end-of-file-fixer` + `pyproject.toml`/`.pre-commit-config.yaml` edits) done elsewhere. **This handoff and `NEXT_SOC.md` do not yet describe that follow-up pass** — flagging so the next session doesn't mistake it for scope creep or lose track of it. Isolated to just the concurrency fix (`strix/tools/proxy/caido_api.py` + `tests/test_caido_concurrency.py`), the diff is 2 files / 2 areas — well under the gate's own 2-area-clean / 3-area-fail threshold. `touch-scope-verify`, `gate-verify`, and `framework-verify` all still pass.
+- Nothing has been committed or pushed. Working tree is dirty with the original SOC-008 changes, the undocumented follow-up pass above, and now the concurrency fix (34 files total per `git status --porcelain`).
 
 ## Produced artifacts
 
-*(none — removal only)*
+- `.work.soc/plans/SOC-008-tool-improvement-plan.md` — full evidence ledger, improvement matrix, per-item specs, execution order, and final verification results (§9).
+- `soc-008-tool-improvement-plan.canvas.tsx` (Cursor Canvas, in the managed `canvases/` dir) — on-screen matrix + verification table + per-item detail.
+- New source: `strix/telemetry/secrets.py`.
+- New tests: `tests/test_authorization_gate.py`, `tests/test_logging_scrub.py`, `tests/test_ssrf_guard.py`, `tests/test_sarif_export.py`, `tests/test_fail_on_threshold.py`, `tests/test_caido_concurrency.py`.
+- `.work.soc/touch-scope` — declared allowed paths for this initiative (`strix/`, `tests/`, `Makefile`, `.work.soc/plans/`).
 
 ## Open
 
-- Parent `.ai` project now owns all tools-project integration. No new unknowns.
+- **Nothing committed.** Next owner action: review the diff and either ask for a commit (a task ref will be needed per `.cursorrules` Task Refs policy — none was provided this session) or request further changes.
+- **SOC-008-G** (CI workflow) — explicitly declined by the operator. Do not re-propose unless asked.
+- **SOC-008-I** (sandbox hardening: `Dockerfile` `NOPASSWD:ALL`, always-on `NET_ADMIN`/`NET_RAW`, no resource limits) — needs a dedicated session with Docker build time budgeted; touches the protected `Containers/Dockerfile`.
+- **SOC-008-J** (encrypt-at-rest for `~/.strix/cli-config.json`) — needs the operator to pick a keyring dependency (`keyring` vs `keyrings.cryptfile` vs platform-specific) before any code is written; adding a dependency is not unilateral per house rules.
+- **Unverified:** no live end-to-end scan (against a real repo or URL target) was run to observe A's authorization prompt, D's SSRF guard, or E's SARIF file actually firing during a full agent run. Verification this session was unit-test/static-analysis level only. (Partial exception: the Caido proxy tools — `list_requests`/`list_sitemap` — *were* exercised live by the operator, which is how the concurrency bug above was found; that's real-world evidence for the proxy-tool code paths specifically, not for A/D/E.)
+- **Stale cross-references:** `NEXT_SOC.md`'s "Completed work" table and "Recommended next" list do not yet mention the concurrency fix above or the undocumented follow-up pass referenced in the blast-radius bullet — reconcile in the next session close (`@session-soc`).
+- The pre-existing 70-error mypy / 832-error pyright baseline (see Key findings) is untouched technical debt in files this session didn't own — flagged, not fixed.

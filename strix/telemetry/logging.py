@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING
 
 import litellm
 
+from strix.telemetry.secrets import scrub
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -40,6 +42,27 @@ class _StrixContextFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         record.scan_id = _SCAN_ID.get() or "-"
         record.agent_id = _AGENT_ID.get() or "-"
+        return True
+
+
+class _SecretScrubFilter(logging.Filter):
+    """Redact secret-shaped substrings before a record is formatted/written.
+
+    Renders the record's message eagerly (``msg % args``) so both plain and
+    %-style log calls are covered by one pass, then clears ``args`` so the
+    formatter doesn't re-apply ``%`` substitution to the now-plain, already
+    -scrubbed string. Never suppresses a record — a bug here should degrade
+    to "log it unscrubbed" territory only in the sense that it still logs;
+    it does not silently drop diagnostics.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            rendered = record.getMessage()
+        except Exception:  # noqa: BLE001 - never let a formatting bug drop a log record
+            return True
+        record.msg = scrub(rendered)
+        record.args = None
         return True
 
 
@@ -108,17 +131,20 @@ def setup_scan_logging(run_dir: Path, *, debug: bool | None = None) -> Callable[
 
     formatter = logging.Formatter(_FORMAT, datefmt=_DATEFMT)
     context_filter = _StrixContextFilter()
+    scrub_filter = _SecretScrubFilter()
 
     file_handler = logging.FileHandler(log_path, mode="a", encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     file_handler.addFilter(context_filter)
+    file_handler.addFilter(scrub_filter)
     setattr(file_handler, _HANDLER_TAG, True)
 
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging.DEBUG if debug else logging.ERROR)
     stream_handler.setFormatter(formatter)
     stream_handler.addFilter(context_filter)
+    stream_handler.addFilter(scrub_filter)
     setattr(stream_handler, _HANDLER_TAG, True)
 
     tracked_loggers = [logging.getLogger(name) for name in _TRACKED_ROOTS]

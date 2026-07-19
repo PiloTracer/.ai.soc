@@ -7,8 +7,9 @@ import json
 import logging
 import uuid
 from collections import Counter
+from collections.abc import Awaitable, Callable  # noqa: TC003
 from datetime import UTC, datetime
-from typing import Any, Literal, get_args
+from typing import Any, Literal, cast, get_args
 
 from agents import RunContextWrapper, function_tool
 
@@ -401,7 +402,7 @@ async def create_agent(
     inner = _ctx(ctx)
     coordinator = coordinator_from_context(inner)
     parent_id = inner.get("agent_id")
-    spawner = inner.get("spawn_child_agent")
+    spawner_raw = inner.get("spawn_child_agent")
 
     if coordinator is None or parent_id is None:
         return json.dumps(
@@ -409,7 +410,7 @@ async def create_agent(
             ensure_ascii=False,
             default=str,
         )
-    if not callable(spawner):
+    if not callable(spawner_raw):
         return json.dumps(
             {
                 "success": False,
@@ -418,6 +419,7 @@ async def create_agent(
             ensure_ascii=False,
             default=str,
         )
+    spawner = cast("Callable[..., Awaitable[Any]]", spawner_raw)
 
     skill_list = list(skills or [])
     skill_error = validate_requested_skills(skill_list)
@@ -531,6 +533,8 @@ async def agent_finish(
     if report_to_parent:
         async with coordinator._lock:
             agent_name = coordinator.names.get(me, me)
+        if agent_name is None:
+            agent_name = me or "unknown"
         report = _render_completion_report(
             agent_name=agent_name,
             agent_id=me,
@@ -547,7 +551,6 @@ async def agent_finish(
                 "from": me,
                 "content": report,
                 "type": "completion",
-                "priority": "high",
             },
         )
         parent_notified = True

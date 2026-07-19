@@ -41,6 +41,7 @@ from strix.interface.utils import (
     collect_local_sources,
     dedupe_local_targets,
     find_oversized_local_targets,
+    gated_targets_for_authorization,
     generate_run_name,
     image_exists,
     infer_target_type,
@@ -51,7 +52,7 @@ from strix.interface.utils import (
     validate_config_file,
 )
 from strix.report.state import get_global_report_state
-from strix.report.writer import read_run_record, write_run_record
+from strix.report.writer import SEVERITY_ORDER, read_run_record, write_run_record
 from strix.telemetry import posthog, scarf
 from strix.telemetry.logging import configure_dependency_logging
 
@@ -312,6 +313,7 @@ def _positive_budget(value: str) -> float:
     except ValueError as exc:
         raise argparse.ArgumentTypeError(f"invalid float value: {value!r}") from exc
     import math
+
     if not math.isfinite(budget) or budget <= 0:
         raise argparse.ArgumentTypeError("must be a finite number greater than 0")
     return budget
@@ -336,8 +338,8 @@ Examples:
   # Large local repository (bind-mounted read-only instead of copied)
   soc --mount ./huge-monorepo
 
-  # Domain penetration test
-  soc --target example.com
+  # Domain penetration test (non-interactive requires the authorization flag)
+  soc --target example.com -n --i-have-authorization
 
   # IP address penetration test
   soc --target 192.168.1.42
@@ -352,6 +354,9 @@ Examples:
   # Custom instructions (from file)
   soc --target example.com --instruction-file ./instructions.txt
   soc --target https://app.com --instruction-file /path/to/detailed_instructions.md
+
+  # CI pipeline: only fail the build on high/critical findings
+  soc --target ./my-project -n --fail-on high
         """,
     )
 
@@ -406,6 +411,32 @@ Examples:
         help=(
             "Run in non-interactive mode (no TUI, exits on completion). "
             "Default is interactive mode with TUI."
+        ),
+    )
+
+    parser.add_argument(
+        "--i-have-authorization",
+        action="store_true",
+        help=(
+            "Attest that you own or have explicit written authorization to actively "
+            "test every URL/domain/IP target in this run. Required in non-interactive "
+            "mode whenever a target is not on loopback (localhost/127.0.0.1/::1) — "
+            "otherwise the run refuses to start. In interactive mode, omitting this "
+            "flag shows the same confirmation as an interactive prompt instead."
+        ),
+    )
+
+    parser.add_argument(
+        "--fail-on",
+        type=str,
+        choices=["critical", "high", "medium", "low", "any", "none"],
+        default="any",
+        help=(
+            "Non-interactive exit-code threshold: exit 2 only if the highest severity "
+            "among filed findings is at or above this level. 'any' (default) fails on "
+            "any finding regardless of severity — matches the tool's behavior before "
+            "this flag existed. 'none' never fails the exit code on findings. "
+            "Ignored in interactive mode. Default: any."
         ),
     )
 
@@ -544,6 +575,7 @@ Examples:
         args.targets_info = dedupe_local_targets(args.targets_info)
 
         assign_workspace_subdirs(args.targets_info)
+        confirm_target_authorization(args, parser)
         rewrite_localhost_targets(args.targets_info, HOST_GATEWAY_HOSTNAME)
 
         max_local_copy_mb = load_settings().runtime.max_local_copy_mb
@@ -563,6 +595,82 @@ Examples:
     return args
 
 
+def confirm_target_authorization(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    """Refuse to actively test any non-loopback web/IP target without an explicit
+    operator attestation of authorization.
+
+    Only ``web_application``/``ip_address`` targets are gated (see
+    ``gated_targets_for_authorization``) — local code paths and repository
+    clones are read, not actively tested over the network, so they're never
+    gated. Must run before ``rewrite_localhost_targets``: the loopback
+    exemption needs to see the original host, not the
+    ``host.docker.internal`` rewrite.
+    """
+    args.authorization_confirmed_interactively = False
+
+    gated = gated_targets_for_authorization(args.targets_info)
+    if not gated or args.i_have_authorization:
+        return
+
+    target_list = "\n".join(f"  - {t.get('original', '?')}" for t in gated)
+
+    if args.non_interactive:
+        parser.error(
+            "Authorization confirmation required before testing the following "
+            f"target(s):\n{target_list}\n"
+            "These targets are actively tested (network requests, exploitation PoCs), "
+            "not just read. Re-run with --i-have-authorization once you own them or "
+            "have explicit written authorization to test them."
+        )
+
+    console = Console()
+    console.print("\n[bold #eab308]Authorization required[/] before testing:")
+    for target in gated:
+        console.print(f"  [white]{target.get('original', '?')}[/]")
+    console.print(
+        "\nOnly continue if you own these systems or have explicit written "
+        "authorization to test them.\n"
+    )
+    try:
+        reply = input('Type "yes" to confirm you are authorized: ')
+    except EOFError:
+        reply = ""
+    if reply.strip().lower() != "yes":
+        console.print("[red]Authorization not confirmed \u2014 aborting.[/]")
+        sys.exit(1)
+    args.authorization_confirmed_interactively = True
+
+
+def should_fail_on_severity(severities: list[str], threshold: str) -> bool:
+    """True iff a non-interactive run's exit code should be 2 (findings threshold met).
+
+    Pure and side-effect-free so it's unit-testable without a full scan
+    (SOC-008-F). ``threshold`` ranking reuses ``strix.report.writer.SEVERITY_ORDER``
+    (lower number = more severe) — the same ranking used to sort/display
+    vulnerabilities elsewhere, so "critical" here means the same thing it
+    means in the report.
+
+    - ``"none"``: never fails, regardless of findings.
+    - ``"any"`` (default — preserves pre-SOC-008-F behavior exactly): fails if
+      ``severities`` is non-empty, regardless of the severity values.
+    - Otherwise: fails iff at least one entry in ``severities`` ranks at or
+      above (numerically at or below) ``threshold``. An unrecognized severity
+      string is treated as the least severe rank ("info"), never causing a
+      false failure.
+    """
+    if threshold == "none":
+        return False
+    if threshold == "any":
+        return bool(severities)
+
+    threshold_rank = SEVERITY_ORDER.get(threshold, SEVERITY_ORDER["low"])
+    lowest_rank = SEVERITY_ORDER["info"]
+    return any(
+        SEVERITY_ORDER.get(str(severity).lower(), lowest_rank) <= threshold_rank
+        for severity in severities
+    )
+
+
 def _persist_run_record(args: argparse.Namespace) -> None:
     run_dir = run_dir_for(args.run_name)
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -580,6 +688,10 @@ def _persist_run_record(args: argparse.Namespace) -> None:
         "diff_scope": getattr(args, "diff_scope", {"active": False}),
         "scope_mode": args.scope_mode,
         "diff_base": args.diff_base,
+        "i_have_authorization": bool(getattr(args, "i_have_authorization", False)),
+        "authorization_confirmed_interactively": bool(
+            getattr(args, "authorization_confirmed_interactively", False)
+        ),
     }
     write_run_record(run_dir, run_record)
 
@@ -627,6 +739,14 @@ def _load_resume_state(args: argparse.Namespace, parser: argparse.ArgumentParser
     persisted_scan_mode = state.get("scan_mode")
     if persisted_scan_mode and args.scan_mode == "deep":
         args.scan_mode = persisted_scan_mode
+    # Authorization was already confirmed (or exempt) when the original run
+    # started; a resumed run doesn't re-run confirm_target_authorization
+    # against the same, already-approved target list, so carry the original
+    # attestation forward for an honest scope context (SOC-008-B).
+    args.i_have_authorization = bool(state.get("i_have_authorization"))
+    args.authorization_confirmed_interactively = bool(
+        state.get("authorization_confirmed_interactively")
+    )
 
 
 def display_completion_message(args: argparse.Namespace, results_path: Path) -> None:
@@ -855,7 +975,9 @@ def main() -> None:
     if args.non_interactive:
         report_state = get_global_report_state()
         if report_state and report_state.vulnerability_reports:
-            sys.exit(2)
+            severities = [r.get("severity", "") for r in report_state.vulnerability_reports]
+            if should_fail_on_severity(severities, args.fail_on):
+                sys.exit(2)
 
 
 if __name__ == "__main__":

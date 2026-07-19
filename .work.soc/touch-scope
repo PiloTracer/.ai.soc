@@ -1,0 +1,19 @@
+# SOC-008 — declared touch scope (see .work.soc/plans/SOC-008-tool-improvement-plan.md)
+# One allowed path prefix per line. Trailing / allows everything under it.
+# Expanded during verification to cover the type-check/pre-commit cleanup
+# that the operator asked for.
+strix/
+tests/
+Makefile
+NOTICE
+pyproject.toml
+.pre-commit-config.yaml
+uv.lock
+.github/
+scripts/
+skills/
+templates/
+START_HERE.md
+.work.soc/plans/
+.work.soc/context/
+.work.soc/touch-scope

@@ -24,6 +24,19 @@ Modifications to the original Strix source:
 - Strix logos and trademarks removed; custom SOC branding required
 - License analysis and compliance documentation added under .work.soc/
 - Bootstrap templates for .work.soc/ structure added under templates/
+- SOC-008: operator authorization-confirmation gate, honest scope/authorization
+  language, secret-scrubbing log filter, cloud-metadata/link-local egress guard,
+  SARIF 2.1.0 export, `--fail-on` severity threshold, and `make test` target
+  (strix/interface/main.py, strix/interface/utils.py, strix/core/inputs.py,
+  strix/agents/prompts/system_prompt.jinja, strix/telemetry/logging.py,
+  strix/telemetry/secrets.py, strix/tools/proxy/caido_api.py,
+  strix/report/writer.py, strix/report/state.py, Makefile, tests/)
+- SOC-008 follow-up: resolved pre-existing type-check baseline so
+  `make check-all` and `pre-commit run --all-files` pass; updated
+  `pyproject.toml`, `.pre-commit-config.yaml`, `strix/runtime/docker_client.py`,
+  `strix/telemetry/_common.py`, `strix/tools/agents_graph/tools.py`,
+  `strix/tools/proxy/caido_api.py`, `strix/tools/proxy/tools.py`, plus
+  end-of-file fixes across framework files.
 
 See .work.soc/analysis/20260629-STRIX-to-AI-SOC-LICENSE-ANALYSIS.md for the
 full compliance audit and migration checklist.

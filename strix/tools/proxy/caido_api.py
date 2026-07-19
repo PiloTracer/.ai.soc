@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import json
 import os
 import time
@@ -42,6 +43,20 @@ _SITEMAP_PAGE_SIZE = 30
 
 _DEFAULT_CAIDO_URL = "http://127.0.0.1:48080"
 _CLIENT_CACHE: dict[str, Client] = {}
+# Guards creation of the cached client (avoids a duplicate/leaked Client +
+# guest-login when two callers race get_client() before it's populated).
+_CLIENT_CREATE_LOCK = asyncio.Lock()
+# caido_sdk_client's GraphQLClient wraps every single query/mutation in its
+# own transient connect()/disconnect() cycle around one shared aiohttp
+# transport (gql.Client.execute_async does `async with self as session:`,
+# per caido_sdk_client/graphql/client.py::_execute). Two concurrent calls on
+# the same cached client race on that transport: one's connect() can fire
+# while the other's connection is still open (TransportAlreadyConnected), or
+# one's teardown can close the connector out from under the other's in-flight
+# request (ClientConnectionError: Connector is closed). Every call that
+# reaches the SDK (request/replay/scope/graphql) must hold this lock for the
+# duration of that call.
+_GRAPHQL_LOCK = asyncio.Lock()
 _REQ_FIELD_MAP: dict[SortBy, tuple[str, str]] = {
     "timestamp": ("req", "created_at"),
     "host": ("req", "host"),
@@ -85,18 +100,24 @@ async def get_client() -> Client:
     if client := _CLIENT_CACHE.get("default"):
         return client
 
-    token = await asyncio.to_thread(_login_as_guest)
-    client = Client(caido_url(), auth=TokenAuthOptions(token=token))
-    await client.connect()
-    _CLIENT_CACHE["default"] = client
-    return client
+    async with _CLIENT_CREATE_LOCK:
+        # Re-check: another caller may have created and cached the client
+        # while we were waiting for the lock.
+        if client := _CLIENT_CACHE.get("default"):
+            return client
+        token = await asyncio.to_thread(_login_as_guest)
+        client = Client(caido_url(), auth=TokenAuthOptions(token=token))
+        await client.connect()
+        _CLIENT_CACHE["default"] = client
+        return client
 
 
 async def close_client() -> None:
     client = _CLIENT_CACHE.pop("default", None)
     if client is None:
         return
-    await client.aclose()
+    async with _GRAPHQL_LOCK:
+        await client.aclose()
 
 
 async def list_requests_with_client(
@@ -117,8 +138,9 @@ async def list_requests_with_client(
     if scope_id:
         builder = builder.scope(scope_id)
     target, field = _REQ_FIELD_MAP[sort_by]
-    builder = (builder.descending if sort_order == "desc" else builder.ascending)(target, field)
-    return await builder.execute()
+    builder = (builder.descending if sort_order == "desc" else builder.ascending)(target, field)  # pyright: ignore[reportCallIssue, reportArgumentType]
+    async with _GRAPHQL_LOCK:
+        return await builder.execute()
 
 
 async def get_request_with_client(
@@ -134,7 +156,35 @@ async def get_request_with_client(
     # "Field required" on the missing raw field. Always request both —
     # the caller picks which one to surface via ``part``.
     opts = RequestGetOptions(request_raw=True, response_raw=True)
-    return await client.request.get(request_id, opts)
+    async with _GRAPHQL_LOCK:
+        return await client.request.get(request_id, opts)
+
+
+# SOC-008-D: a narrow, high-confidence blocklist for the tool's own outbound
+# connect target — not a general SSRF filter, and deliberately does NOT block
+# RFC1918/loopback (those remain valid, intended pentest targets: internal
+# network assessments, host.docker.internal-rewritten localhost apps). This
+# guards against the sandbox's own network directly reaching a cloud
+# metadata service (a documented real-world risk for containers on cloud
+# VMs, distinct from testing a *target's* SSRF bugs) — never a legitimate
+# step in any pentest methodology for this tool to be the direct caller.
+_METADATA_HOSTNAMES = frozenset({"metadata.google.internal", "metadata", "metadata.internal"})
+_ALIBABA_METADATA_IP = "100.100.100.200"
+_AWS_IMDS_V6 = "fd00:ec2::254"
+
+
+def _is_blocked_connect_target(host: str) -> bool:
+    """True for well-known cloud-metadata / link-local connect targets."""
+    host_lower = host.lower().strip("[]")
+    if host_lower in _METADATA_HOSTNAMES or host_lower == _ALIBABA_METADATA_IP:
+        return True
+    try:
+        ip = ipaddress.ip_address(host_lower)
+    except ValueError:
+        return False
+    if isinstance(ip, ipaddress.IPv4Address):
+        return ip.is_link_local  # 169.254.0.0/16 — covers AWS/Azure/GCP/DO IMDS
+    return ip.is_link_local or host_lower == _AWS_IMDS_V6  # fe80::/10 + AWS IMDSv2 IPv6
 
 
 def build_raw_request(
@@ -147,8 +197,12 @@ def build_raw_request(
     parsed = urlparse(url)
     if not parsed.scheme or not parsed.netloc:
         raise ValueError(f"Invalid URL: {url}")
-    is_tls = parsed.scheme.lower() == "https"
     host = parsed.hostname or ""
+    if _is_blocked_connect_target(host):
+        raise ValueError(
+            f"Refusing to connect directly to a cloud-metadata/link-local address: {host}"
+        )
+    is_tls = parsed.scheme.lower() == "https"
     port = parsed.port or (443 if is_tls else 80)
     path = parsed.path or "/"
     if parsed.query:
@@ -295,29 +349,30 @@ async def replay_send_raw(
     # rows per call (one without response from the create-step seed, one
     # with response from the actual send). The empty-create + send flow
     # produces exactly one dispatched request.
-    session = await client.replay.sessions.create()
-    try:
-        result = await asyncio.wait_for(
-            client.replay.send(
-                session.id,
-                ReplaySendOptions(raw=raw, connection=connection),
-            ),
-            timeout=_REPLAY_SEND_TIMEOUT_SECONDS,
-        )
-    except TimeoutError:
-        elapsed_ms = int((time.time() - started) * 1000)
-        return {
-            "session_id": str(session.id),
-            "status": "ERROR",
-            "error": (
-                f"Caido replay dispatch did not complete within "
-                f"{_REPLAY_SEND_TIMEOUT_SECONDS:.0f}s — the target may be "
-                "unroutable from the sandbox, or Caido's outbound HTTP client "
-                "is stalled; check the target host/port and retry"
-            ),
-            "elapsed_ms": elapsed_ms,
-            "response_raw": None,
-        }
+    async with _GRAPHQL_LOCK:
+        session = await client.replay.sessions.create()
+        try:
+            result = await asyncio.wait_for(
+                client.replay.send(
+                    session.id,
+                    ReplaySendOptions(raw=raw, connection=connection),
+                ),
+                timeout=_REPLAY_SEND_TIMEOUT_SECONDS,
+            )
+        except TimeoutError:
+            elapsed_ms = int((time.time() - started) * 1000)
+            return {
+                "session_id": str(session.id),
+                "status": "ERROR",
+                "error": (
+                    f"Caido replay dispatch did not complete within "
+                    f"{_REPLAY_SEND_TIMEOUT_SECONDS:.0f}s — the target may be "
+                    "unroutable from the sandbox, or Caido's outbound HTTP client "
+                    "is stalled; check the target host/port and retry"
+                ),
+                "elapsed_ms": elapsed_ms,
+                "response_raw": None,
+            }
     elapsed_ms = int((time.time() - started) * 1000)
     response = getattr(result.entry, "response", None)
     response_raw = getattr(response, "raw", None) if response is not None else None
@@ -331,11 +386,13 @@ async def replay_send_raw(
 
 
 async def scope_list(client: CaidoClient) -> Any:
-    return await client.scope.list()
+    async with _GRAPHQL_LOCK:
+        return await client.scope.list()
 
 
 async def scope_get(client: CaidoClient, scope_id: str) -> Any:
-    return await client.scope.get(scope_id)
+    async with _GRAPHQL_LOCK:
+        return await client.scope.get(scope_id)
 
 
 async def scope_create(
@@ -345,13 +402,14 @@ async def scope_create(
     allowlist: list[str] | None = None,
     denylist: list[str] | None = None,
 ) -> Any:
-    return await client.scope.create(
-        CreateScopeOptions(
-            name=name,
-            allowlist=list(allowlist or []),
-            denylist=list(denylist or []),
-        ),
-    )
+    async with _GRAPHQL_LOCK:
+        return await client.scope.create(
+            CreateScopeOptions(
+                name=name,
+                allowlist=list(allowlist or []),
+                denylist=list(denylist or []),
+            ),
+        )
 
 
 async def scope_update(
@@ -362,18 +420,20 @@ async def scope_update(
     allowlist: list[str] | None = None,
     denylist: list[str] | None = None,
 ) -> Any:
-    return await client.scope.update(
-        scope_id,
-        UpdateScopeOptions(
-            name=name,
-            allowlist=list(allowlist or []),
-            denylist=list(denylist or []),
-        ),
-    )
+    async with _GRAPHQL_LOCK:
+        return await client.scope.update(
+            scope_id,
+            UpdateScopeOptions(
+                name=name,
+                allowlist=list(allowlist or []),
+                denylist=list(denylist or []),
+            ),
+        )
 
 
 async def scope_delete(client: CaidoClient, scope_id: str) -> None:
-    await client.scope.delete(scope_id)
+    async with _GRAPHQL_LOCK:
+        await client.scope.delete(scope_id)
 
 
 async def list_requests(
@@ -568,18 +628,19 @@ async def list_sitemap_with_client(
     pagination, so we fetch all edges for the requested level and slice
     client-side.
     """
-    if parent_id:
-        raw = await client.graphql.query(
-            _SITEMAP_DESCENDANTS_QUERY,
-            variables={"parentId": parent_id, "depth": depth},
-        )
-        data = raw.get("sitemapDescendantEntries") or {}
-    else:
-        raw = await client.graphql.query(
-            _SITEMAP_ROOTS_QUERY,
-            variables={"scopeId": scope_id},
-        )
-        data = raw.get("sitemapRootEntries") or {}
+    async with _GRAPHQL_LOCK:
+        if parent_id:
+            raw = await client.graphql.query(
+                _SITEMAP_DESCENDANTS_QUERY,
+                variables={"parentId": parent_id, "depth": depth},
+            )
+            data = raw.get("sitemapDescendantEntries") or {}
+        else:
+            raw = await client.graphql.query(
+                _SITEMAP_ROOTS_QUERY,
+                variables={"scopeId": scope_id},
+            )
+            data = raw.get("sitemapRootEntries") or {}
 
     edges = data.get("edges") or []
     total = (data.get("count") or {}).get("value", 0)
@@ -610,7 +671,8 @@ async def view_sitemap_entry_with_client(
     client: CaidoClient,
     entry_id: str,
 ) -> dict[str, Any]:
-    raw = await client.graphql.query(_SITEMAP_ENTRY_QUERY, variables={"id": entry_id})
+    async with _GRAPHQL_LOCK:
+        raw = await client.graphql.query(_SITEMAP_ENTRY_QUERY, variables={"id": entry_id})
     entry = raw.get("sitemapEntry")
     if not entry:
         return {"success": False, "error": f"Sitemap entry {entry_id} not found"}

@@ -25,7 +25,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import uuid
-from typing import Any, ClassVar
+from typing import Any
 
 from agents.sandbox.manifest import Manifest
 from agents.sandbox.sandboxes.docker import (
@@ -48,7 +48,11 @@ logger = logging.getLogger(__name__)
 class StrixDockerSandboxClient(DockerSandboxClient):
     # Host directories to bind-mount into the container, set by the docker
     # backend before ``create()``. Each item is ``{source, target, read_only}``.
-    strix_bind_mounts: ClassVar[list[dict[str, Any]]] = []  # overridden per-instance in backends.py
+    strix_bind_mounts: list[dict[str, Any]]  # set per-instance in backends.py
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.strix_bind_mounts = []
 
     async def _create_container(
         self,

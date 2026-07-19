@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from strix.core.inputs import build_root_task, child_initial_input
+from strix.core.inputs import build_root_task, build_scope_context, child_initial_input
 
 
 def _child_kwargs(parent_history: list[Any]) -> dict[str, Any]:
@@ -112,3 +112,66 @@ def test_build_root_task_diff_scope() -> None:
     assert "Scope Constraints:" in task
     assert "3 changed file(s)" in task
     assert "2 deleted file(s)" in task
+
+
+def test_build_scope_context_never_claims_platform_verification() -> None:
+    # SOC-008-B: this self-hosted build has no platform-side verification step —
+    # the scope context must never claim one, regardless of attestation state.
+    config = {
+        "targets": [{"type": "web_application", "details": {"target_url": "https://example.com"}}],
+        "i_have_authorization": True,
+    }
+    context = build_scope_context(config)
+
+    assert "platform" not in context["authorization_source"]
+    assert context["authorization_source"] == "operator_specified_at_launch"
+    assert context["attested_by"] == "operator"
+
+
+def test_build_scope_context_reflects_cli_flag_attestation() -> None:
+    config = {
+        "targets": [{"type": "ip_address", "details": {"target_ip": "203.0.113.5"}}],
+        "i_have_authorization": True,
+        "authorization_confirmed_interactively": False,
+    }
+    assert build_scope_context(config)["active_target_authorization_confirmed"] is True
+
+
+def test_build_scope_context_reflects_interactive_attestation() -> None:
+    config = {
+        "targets": [{"type": "ip_address", "details": {"target_ip": "203.0.113.5"}}],
+        "i_have_authorization": False,
+        "authorization_confirmed_interactively": True,
+    }
+    assert build_scope_context(config)["active_target_authorization_confirmed"] is True
+
+
+def test_build_scope_context_false_when_never_attested() -> None:
+    config = {
+        "targets": [{"type": "local_code", "details": {"target_path": "/repo"}}],
+    }
+    assert build_scope_context(config)["active_target_authorization_confirmed"] is False
+
+
+def test_build_scope_context_authorized_targets_shape_unchanged() -> None:
+    config = {
+        "targets": [
+            {
+                "type": "repository",
+                "details": {
+                    "target_repo": "https://example.com/repo.git",
+                    "workspace_subdir": "repo",
+                },
+            },
+        ],
+    }
+    context = build_scope_context(config)
+
+    assert context["authorized_targets"] == [
+        {
+            "type": "repository",
+            "value": "https://example.com/repo.git",
+            "workspace_path": "/workspace/repo",
+        },
+    ]
+    assert context["user_instructions_do_not_expand_scope"] is True
