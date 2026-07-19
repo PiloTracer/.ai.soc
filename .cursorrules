@@ -260,6 +260,16 @@ When deployed as a thin-client (via `@deploy-basic`), the `.cursorrules` carries
 | Gateway (no install) | `./gateway.sh -t <path\|url>` |
 | Output | `--output-dir <dir>` to redirect reports from `./strix_runs/` |
 
+### Data Loss Prevention (SOC deploy invariant)
+
+**Permission scope:** Explicit human/operator permission authorizes **only the current request / current case**. It is never standing or permanent. Prior approval does not authorize a later destructive action.
+
+- **Git:** NEVER `git commit` or `git push` unless explicitly requested in the **same message**. NEVER amend, rebase, rewrite history, `reset --hard`, `clean -fd`/`-fdx`, or force-push unless explicitly requested in the **same message**.
+- **Files:** NEVER delete/unlink/`rm` files or directories unless explicitly requested in the **same message**. Narrow exception: agent-created ephemeral files under `tmp/` (or designated temp dir) created by this agent in the **current session**.
+- **Databases / persistent stores:** NEVER `DROP`, `TRUNCATE`, wipe, factory-reset, mass-delete, or run destructive down-migrations; NEVER remove/prune Docker/Podman volumes or data dirs holding persistent state — unless explicitly requested in the **same message**.
+
+Full detail: see **Data Loss Prevention** below (fat-client) or this invariant when only the SOC block is present (thin-client).
+
 <!-- SOC_DESIGN_OS_END -->
 
 ---
@@ -281,7 +291,7 @@ When deployed as a thin-client (via `@deploy-basic`), the `.cursorrules` carries
 **If you think a change is needed in any protected file:**
 1. Stop.
 2. Explain WHY it's needed.
-3. Ask for explicit permission.
+3. Ask for explicit permission **for this case only** (never treat a prior approval as standing authorization).
 
 ---
 
@@ -306,8 +316,8 @@ When deployed as a thin-client (via `@deploy-basic`), the `.cursorrules` carries
 - Never hardcode real customer emails or IDs.
 
 ### File Hygiene
-- Delete temporary files after use.
 - Do not write exports into the source tree; use `tmp/` or a designated output directory.
+- Ephemeral cleanup is limited to files **this agent created in the current session** under `tmp/` (or another designated temp directory). All other deletion requires explicit operator permission (see Data Loss Prevention).
 
 ---
 
@@ -338,8 +348,25 @@ Do not run `pip install` — always use `uv sync`.
 - Wait for approval before large code changes when the user asked for a plan only.
 - Ask for confirmation before applying edits when scope is unclear.
 
-### Deletion
-- NEVER delete files without explicit user permission.
+## Data Loss Prevention
+
+**Permission scope (applies to every rule in this section):** Explicit human/operator permission authorizes **only the current request / current case**. It is never standing or permanent. A prior “yes,” an earlier session, or a blanket “you may commit/delete/wipe” does **not** authorize a later destructive action — ask again in the message that requires it.
+
+### Git
+- NEVER execute `git commit` or `git push` unless the operator explicitly requests it in the **same message**.
+- NEVER amend, rebase, rewrite history, `reset --hard`, `clean -fd`/`-fdx`, or force-push unless the operator explicitly requests that action in the **same message**.
+- Otherwise provide the exact commands for the operator to run themselves.
+- Task refs still apply when a commit is explicitly requested (see Task Refs).
+
+### Files and directories
+- NEVER delete, unlink, `rm`, empty, or permanently remove files or directories unless the operator explicitly requests that deletion in the **same message**.
+- **Narrow exception:** agent-created ephemeral files under `tmp/` (or a designated temp directory) that **this agent created in the current session** may be removed without asking.
+- Prefer asking or leaving files in place over destructive cleanup.
+
+### Databases and persistent stores
+- NEVER `DROP`, `TRUNCATE`, wipe, factory-reset, or otherwise destroy database contents (local, remote, Dockerized, or embedded) unless the operator explicitly requests that action in the **same message**.
+- NEVER run mass-delete queries (`DELETE` without a restrictive filter, equivalent ORM/bulk wipes) or destructive down-migrations unless explicitly requested in the **same message**.
+- NEVER remove or prune Docker/Podman volumes, bind mounts, or data directories that hold persistent state unless explicitly requested in the **same message**.
 
 ## Task Refs
 
@@ -351,11 +378,6 @@ Task and ticket refs (e.g. `PROJ-456`, `PROJ-T-23`) are the primary key that lin
 2. **If no ref is known and the work clearly belongs to a task** — ask the user **once** for the ref before committing. Do not guess or invent refs.
 3. **If no ref exists** (exploratory work, docs, chore without a ticket) — use conventional `type:` format without ref. That is acceptable.
 4. **The user can always provide a ref at any time** by pasting it into the conversation. Paste it verbatim into the commit subject.
-
-### Git
-- NEVER execute `git commit` or `git push` unless the user explicitly requests it in the same message.
-- Otherwise provide commit commands for the user when they will commit themselves.
-- Never modify git history (rebase, force-push) without explicit user request.
 
 ### No Attribution / No Signatures
 - Do NOT add "Generated by", "Created by", dates, or agent signatures to files you create or modify.
