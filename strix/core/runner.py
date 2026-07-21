@@ -73,7 +73,7 @@ async def run_strix_scan(
     run_dir.mkdir(parents=True, exist_ok=True)
     state_dir = runtime_state_dir(run_dir)
     state_dir.mkdir(parents=True, exist_ok=True)
-    teardown_logging = setup_scan_logging(run_dir)
+    setup_scan_logging(run_dir)
     set_scan_id(scan_id)
 
     agents_path = state_dir / "agents.json"
@@ -340,4 +340,3 @@ async def run_strix_scan(
             logger.info("Tearing down sandbox session for scan %s", scan_id)
             await session_manager.cleanup(scan_id)
         logger.info("Strix scan %s done", scan_id)
-        teardown_logging()

@@ -3,12 +3,11 @@
 ## Recommended next
 
 ```
-1. [NEXT] Decide whether to commit SOC-008 (A,B,C,D,E,F,H) — dirty tree, no task ref provided yet
+1. [NEXT] Run a live end-to-end scan (real repo or URL target) to confirm strix.log lands under target .work.soc and observe SOC-008-A/D/E behavior for real
 2. [NEXT] SOC-008-I — sandbox hardening (Dockerfile NOPASSWD:ALL, always-on NET_ADMIN/NET_RAW, no resource limits) — needs a dedicated session with Docker build+smoke-test time budgeted
 3. [NEXT] SOC-008-J — encrypt-at-rest for ~/.strix/cli-config.json — needs operator's keyring-library choice before any code is written
-4. [NEXT] Run a live end-to-end scan (real repo or URL target) to observe SOC-008-A's auth prompt, D's SSRF guard, and E's SARIF file firing for real — this session's verification was unit/static-analysis only
-5. [PENDING] Address path rebasing for opencode.json / .cursorrules (replace /mnt/work/Project/ with {WORK_ROOT}) — status unconfirmed this session, carried over from SOC-005
-6. [PENDING] Optionally rename Python module `strix/` → `soc/` (requires import refactoring — see analysis §7) — carried over, not touched this session
+4. [PENDING] Address path rebasing for opencode.json / .cursorrules (replace /mnt/work/Project/ with {WORK_ROOT}) — carried over from SOC-005
+5. [PENDING] Optionally rename Python module `strix/` → `soc/` — carried over, not touched
 ```
 
 ## Current SOC iteration
@@ -23,6 +22,7 @@
 | SOC-006 | Register `.ai.soc` skills with `opencode.json` | DONE |
 | SOC-007 | Remove tools-project integration (moved to parent `.ai`) | DONE |
 | SOC-008 | Tool improvement plan (auth gate, honest scope language, secret scrubbing, SSRF guard, SARIF export, `--fail-on`, `make test`) — sub-items A–H | A,B,C,D,E,F,H DONE (uncommitted) · G declined by operator · I,J deferred |
+| SOC-009 | Scan logging lifecycle + target `.work.soc` default output dir + `strix.log` in run dir | DONE (uncommitted, verified 2026-07-20) |
 
 ## Completed work
 
@@ -45,6 +45,7 @@
 | SOC-008-F | `--fail-on {critical,high,medium,low,any,none}` exit-code threshold — `strix/interface/main.py` |
 | SOC-008-H | `make test` target wired into `check-all`/`dev` — `Makefile` |
 | Environment fix | `uv run pytest`/`mypy`/`bandit` were silently broken (stale `.venv` script shebangs pointing at a nonexistent moved-repo path) — fixed via `uv sync --reinstall`. See HANDOFF_SOC "Key findings" for detail; relevant to any session that ran `uv run mypy`/`bandit` before 2026-07-18. |
+| SOC-009 logging/output | Early per-run `strix.log` (full scan lifecycle); local targets default output to `<target>/.work.soc`; `configure_scan_output_dir` + resume discovery — `strix/core/paths.py`, `strix/interface/main.py`, `strix/telemetry/logging.py` |
 
 ## What was intentionally NOT changed
 

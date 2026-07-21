@@ -86,3 +86,19 @@ def test_setup_scan_logging_preserves_ordinary_message_and_percent_args(tmp_path
 
     contents = (tmp_path / "strix.log").read_text(encoding="utf-8")
     assert "Scan started for target=example.com mode=deep" in contents
+
+
+def test_setup_scan_logging_is_idempotent_for_same_run_dir(tmp_path: Path) -> None:
+    first = setup_scan_logging(tmp_path, debug=True)
+    second = setup_scan_logging(tmp_path, debug=True)
+    try:
+        logging.getLogger("strix.telemetry.test_logging_scrub").error("scan failed once")
+        assert first is not second
+        logging.getLogger("strix.telemetry.test_logging_scrub").error("scan failed twice")
+    finally:
+        second()
+        first()
+
+    contents = (tmp_path / "strix.log").read_text(encoding="utf-8")
+    assert contents.count("scan failed once") == 1
+    assert contents.count("scan failed twice") == 1

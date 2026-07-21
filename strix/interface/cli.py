@@ -199,6 +199,10 @@ async def run_cli(args: Any) -> None:  # noqa: PLR0915
 
     except Exception as e:
         console.print(f"[bold red]Error during penetration test:[/] {e}")
+        logger.exception(
+            "Error during penetration test: run_name=%s",
+            getattr(args, "run_name", "?"),
+        )
         raise
 
     if report_state.final_scan_result:

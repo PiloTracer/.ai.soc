@@ -19,6 +19,13 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
+_ACTIVE_SCAN_LOG_DIR: ContextVar[Path | None] = ContextVar(
+    "strix_active_scan_log_dir",
+    default=None,
+)
+_ACTIVE_TEARDOWN: list[Callable[[], None] | None] = [None]
+
+
 _SCAN_ID: ContextVar[str | None] = ContextVar("strix_scan_id", default=None)
 _AGENT_ID: ContextVar[str | None] = ContextVar("strix_agent_id", default=None)
 
@@ -100,6 +107,17 @@ def configure_dependency_logging() -> None:
     warnings.filterwarnings("ignore", category=RuntimeWarning, module="asyncio")
 
 
+def _scan_logging_active_for(run_dir: Path) -> bool:
+    active = _ACTIVE_SCAN_LOG_DIR.get()
+    return active is not None and active == run_dir.resolve()
+
+
+def teardown_scan_logging() -> None:
+    """Flush/close/remove active scan log handlers, if any."""
+    if _ACTIVE_TEARDOWN[0] is not None:
+        _ACTIVE_TEARDOWN[0]()
+
+
 def setup_scan_logging(run_dir: Path, *, debug: bool | None = None) -> Callable[[], None]:
     """Attach scan-scoped handlers; return a teardown callable.
 
@@ -113,9 +131,14 @@ def setup_scan_logging(run_dir: Path, *, debug: bool | None = None) -> Callable[
 
     Returns:
         A no-arg callable that flushes/closes/removes the handlers this
-        call attached. Idempotent — calling twice is a no-op the second
-        time. Safe to call from a ``finally`` block.
+        call attached. Idempotent — a second call for the same ``run_dir``
+        while handlers are already active returns a no-op teardown.
+        Safe to call from a ``finally`` block.
     """
+    resolved = run_dir.resolve()
+    if _scan_logging_active_for(resolved):
+        return lambda: None
+
     configure_dependency_logging()
 
     if debug is None:
@@ -158,6 +181,8 @@ def setup_scan_logging(run_dir: Path, *, debug: bool | None = None) -> Callable[
         logging.getLogger(name).setLevel(logging.WARNING)
 
     def _teardown() -> None:
+        if _ACTIVE_TEARDOWN[0] is not _teardown:
+            return
         for tracked in tracked_loggers:
             for handler in list(tracked.handlers):
                 if getattr(handler, _HANDLER_TAG, False):
@@ -165,5 +190,9 @@ def setup_scan_logging(run_dir: Path, *, debug: bool | None = None) -> Callable[
                     with contextlib.suppress(Exception):
                         handler.flush()
                         handler.close()
+        _ACTIVE_SCAN_LOG_DIR.set(None)
+        _ACTIVE_TEARDOWN[0] = None
 
+    _ACTIVE_SCAN_LOG_DIR.set(resolved)
+    _ACTIVE_TEARDOWN[0] = _teardown
     return _teardown

@@ -29,7 +29,12 @@ from strix.config.models import (
     configure_sdk_model_defaults,
     is_known_openai_bare_model,
 )
-from strix.core.paths import run_dir_for, runtime_state_dir, set_output_dir
+from strix.core.paths import (
+    configure_scan_output_dir,
+    get_output_dir,
+    run_dir_for,
+    runtime_state_dir,
+)
 from strix.interface.cli import run_cli
 from strix.interface.tui import run_tui
 from strix.interface.utils import (
@@ -54,7 +59,12 @@ from strix.interface.utils import (
 from strix.report.state import get_global_report_state
 from strix.report.writer import SEVERITY_ORDER, read_run_record, write_run_record
 from strix.telemetry import posthog, scarf
-from strix.telemetry.logging import configure_dependency_logging
+from strix.telemetry.logging import (
+    configure_dependency_logging,
+    set_scan_id,
+    setup_scan_logging,
+    teardown_scan_logging,
+)
 
 
 HOST_GATEWAY_HOSTNAME = "host.docker.internal"
@@ -489,7 +499,8 @@ Examples:
         metavar="DIR",
         help=(
             "Base directory for run output. Reports and run state are written to "
-            "<output-dir>/strix_runs/<run-name>/ instead of ./strix_runs/<run-name>/."
+            "<output-dir>/strix_runs/<run-name>/ (including strix.log). "
+            "When omitted for a local path target, defaults to <target>/.work.soc."
         ),
     )
 
@@ -537,6 +548,11 @@ Examples:
                 "the prior run left off, including the original target list."
             )
         _load_resume_state(args, parser)
+        configure_scan_output_dir(
+            output_dir=args.output_dir,
+            run_name=args.resume,
+            targets_info=args.targets_info,
+        )
         agents_path = runtime_state_dir(run_dir_for(args.resume)) / "agents.json"
         if not agents_path.exists():
             parser.error(
@@ -680,6 +696,7 @@ def _persist_run_record(args: argparse.Namespace) -> None:
         "status": "running",
         "start_time": datetime.now(UTC).isoformat(),
         "end_time": None,
+        "output_base": str(get_output_dir()),
         "targets_info": args.targets_info,
         "scan_mode": args.scan_mode,
         "instruction": args.instruction,
@@ -876,108 +893,124 @@ def main() -> None:
     if args.config:
         apply_config_override(validate_config_file(args.config))
 
-    if args.output_dir:
-        out = Path(args.output_dir).resolve()
-        out.mkdir(parents=True, exist_ok=True)
-        set_output_dir(out)
-
-    check_docker_installed()
-    pull_docker_image()
-
-    validate_environment()
-    asyncio.run(warm_up_llm())
-
-    persist_current()
+    output_base = configure_scan_output_dir(
+        output_dir=args.output_dir,
+        run_name=args.resume,
+        targets_info=getattr(args, "targets_info", None),
+    )
+    if not args.output_dir:
+        args.output_dir = str(output_base)
 
     args.run_name = args.resume or generate_run_name(args.targets_info)
+    run_dir = run_dir_for(args.run_name)
+    run_dir.mkdir(parents=True, exist_ok=True)
+    setup_scan_logging(run_dir)
+    set_scan_id(args.run_name)
+    logger.info("Scan logging active: run_name=%s run_dir=%s", args.run_name, run_dir)
 
-    if not args.resume:
-        for target_info in args.targets_info:
-            if target_info["type"] == "repository":
-                repo_url = target_info["details"]["target_repo"]
-                dest_name = target_info["details"].get("workspace_subdir")
-                cloned_path = clone_repository(repo_url, args.run_name, dest_name)
-                target_info["details"]["cloned_repo_path"] = cloned_path
-
-        args.local_sources = collect_local_sources(args.targets_info)
-        try:
-            diff_scope = resolve_diff_scope_context(
-                local_sources=args.local_sources,
-                scope_mode=args.scope_mode,
-                diff_base=args.diff_base,
-                non_interactive=args.non_interactive,
-            )
-        except ValueError as e:
-            console = Console()
-            error_text = Text()
-            error_text.append("DIFF SCOPE RESOLUTION FAILED", style="bold red")
-            error_text.append("\n\n", style="white")
-            error_text.append(str(e), style="white")
-
-            panel = Panel(
-                error_text,
-                title="[bold white].ai.soc",
-                title_align="left",
-                border_style="red",
-                padding=(1, 2),
-            )
-            console.print("\n")
-            console.print(panel)
-            console.print()
-            sys.exit(1)
-
-        args.diff_scope = diff_scope.metadata
-        if diff_scope.instruction_block:
-            if args.instruction:
-                args.instruction = f"{diff_scope.instruction_block}\n\n{args.instruction}"
-            else:
-                args.instruction = diff_scope.instruction_block
-
-        _persist_run_record(args)
-
-    _telemetry_start_kwargs = {
-        "model": load_settings().llm.model,
-        "scan_mode": args.scan_mode,
-        "is_whitebox": is_whitebox_scan(args.targets_info),
-        "interactive": not args.non_interactive,
-        "has_instructions": bool(args.instruction),
-    }
-    posthog.start(**_telemetry_start_kwargs)
-    scarf.start(**_telemetry_start_kwargs)
-
-    exit_reason = "user_exit"
     try:
+        check_docker_installed()
+        pull_docker_image()
+
+        validate_environment()
+        asyncio.run(warm_up_llm())
+
+        persist_current()
+
+        if not args.resume:
+            for target_info in args.targets_info:
+                if target_info["type"] == "repository":
+                    repo_url = target_info["details"]["target_repo"]
+                    dest_name = target_info["details"].get("workspace_subdir")
+                    cloned_path = clone_repository(repo_url, args.run_name, dest_name)
+                    target_info["details"]["cloned_repo_path"] = cloned_path
+
+            args.local_sources = collect_local_sources(args.targets_info)
+            try:
+                diff_scope = resolve_diff_scope_context(
+                    local_sources=args.local_sources,
+                    scope_mode=args.scope_mode,
+                    diff_base=args.diff_base,
+                    non_interactive=args.non_interactive,
+                )
+            except ValueError as e:
+                logger.exception("Diff scope resolution failed for run %s", args.run_name)
+                console = Console()
+                error_text = Text()
+                error_text.append("DIFF SCOPE RESOLUTION FAILED", style="bold red")
+                error_text.append("\n\n", style="white")
+                error_text.append(str(e), style="white")
+
+                panel = Panel(
+                    error_text,
+                    title="[bold white].ai.soc",
+                    title_align="left",
+                    border_style="red",
+                    padding=(1, 2),
+                )
+                console.print("\n")
+                console.print(panel)
+                console.print()
+                sys.exit(1)
+
+            args.diff_scope = diff_scope.metadata
+            if diff_scope.instruction_block:
+                if args.instruction:
+                    args.instruction = f"{diff_scope.instruction_block}\n\n{args.instruction}"
+                else:
+                    args.instruction = diff_scope.instruction_block
+
+            _persist_run_record(args)
+
+        _telemetry_start_kwargs = {
+            "model": load_settings().llm.model,
+            "scan_mode": args.scan_mode,
+            "is_whitebox": is_whitebox_scan(args.targets_info),
+            "interactive": not args.non_interactive,
+            "has_instructions": bool(args.instruction),
+        }
+        posthog.start(**_telemetry_start_kwargs)
+        scarf.start(**_telemetry_start_kwargs)
+
+        exit_reason = "user_exit"
+        try:
+            if args.non_interactive:
+                asyncio.run(run_cli(args))
+            else:
+                asyncio.run(run_tui(args))
+        except KeyboardInterrupt:
+            exit_reason = "interrupted"
+        except Exception as e:
+            exit_reason = "error"
+            logger.exception("Unhandled exception during scan run %s", args.run_name)
+            posthog.error("unhandled_exception", str(e))
+            scarf.error("unhandled_exception", str(e))
+            raise
+        finally:
+            report_state = get_global_report_state()
+            if report_state:
+                status = {"interrupted": "interrupted", "error": "failed"}.get(
+                    exit_reason,
+                    "stopped",
+                )
+                report_state.cleanup(status=status)
+                posthog.end(report_state, exit_reason=exit_reason)
+                scarf.end(report_state, exit_reason=exit_reason)
+
+        results_path = run_dir_for(args.run_name)
+        display_completion_message(args, results_path)
+
         if args.non_interactive:
-            asyncio.run(run_cli(args))
-        else:
-            asyncio.run(run_tui(args))
-    except KeyboardInterrupt:
-        exit_reason = "interrupted"
-    except Exception as e:
-        exit_reason = "error"
-        posthog.error("unhandled_exception", str(e))
-        scarf.error("unhandled_exception", str(e))
+            report_state = get_global_report_state()
+            if report_state and report_state.vulnerability_reports:
+                severities = [r.get("severity", "") for r in report_state.vulnerability_reports]
+                if should_fail_on_severity(severities, args.fail_on):
+                    sys.exit(2)
+    except Exception:
+        logger.exception("Scan run %s aborted before completion", args.run_name)
         raise
     finally:
-        report_state = get_global_report_state()
-        if report_state:
-            status = {"interrupted": "interrupted", "error": "failed"}.get(
-                exit_reason,
-                "stopped",
-            )
-            report_state.cleanup(status=status)
-            posthog.end(report_state, exit_reason=exit_reason)
-            scarf.end(report_state, exit_reason=exit_reason)
-
-    results_path = run_dir_for(args.run_name)
-    display_completion_message(args, results_path)
-
-    if args.non_interactive:
-        report_state = get_global_report_state()
-        if report_state and report_state.vulnerability_reports:
-            severities = [r.get("severity", "") for r in report_state.vulnerability_reports]
-            if should_fail_on_severity(severities, args.fail_on):
-                sys.exit(2)
+        teardown_scan_logging()
 
 
 if __name__ == "__main__":
