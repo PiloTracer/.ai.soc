@@ -86,14 +86,21 @@ def output_dir_candidates(
     targets_info: list[dict[str, Any]] | None = None,
     explicit_output_dir: Path | str | None = None,
 ) -> list[Path]:
-    """Ordered bases to search when locating a prior run directory."""
+    """Ordered bases to search when locating a prior run directory.
+
+    Order: explicit ``--output-dir`` → inferred local ``<target>/.work.soc``
+    → ``<cwd>/.work.soc`` (SOC-010 default for URL/IP/repo scans) → ``<cwd>``
+    (legacy fallback for runs created before SOC-010).
+    """
     candidates: list[Path] = []
     if explicit_output_dir is not None:
         candidates.append(Path(explicit_output_dir))
     default = resolve_default_output_dir(targets_info)
     if default is not None:
         candidates.append(default)
-    candidates.append(Path.cwd())
+    cwd = Path.cwd().resolve()
+    candidates.append(cwd / WORK_SOC_DIR_NAME)
+    candidates.append(cwd)
     return _dedupe_paths(candidates)
 
 
@@ -140,6 +147,12 @@ def configure_scan_output_dir(
         set_output_dir(default)
         return default
 
-    base = Path.cwd().resolve()
+    # SOC-010: even when no local target infers a base, scans still default
+    # to ``<cwd>/.work.soc`` (operator's documented convention) instead of
+    # ``<cwd>`` so URL/IP/repo runs land alongside other framework state.
+    # ``<cwd>`` itself remains a discoverable resume base via
+    # ``output_dir_candidates`` (legacy fallback).
+    base = Path.cwd().resolve() / WORK_SOC_DIR_NAME
+    base.mkdir(parents=True, exist_ok=True)
     set_output_dir(base)
     return base

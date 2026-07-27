@@ -84,18 +84,24 @@ Run before commit / before claiming completion:
 
 ## Framework paths
 
-Sister frameworks live as siblings on disk. Paths are absolute — no tool-specific config needed.
+Sister frameworks live as siblings on disk. Paths below are templated with `{WORK_ROOT}` for portability — no tool-specific config needed.
+
+**`{WORK_ROOT}` resolution (in priority order):**
+
+1. If a `WORK_ROOT:` line exists anywhere above this section, use that absolute path verbatim.
+2. Otherwise, infer it as the **parent directory of this `.ai.soc` repository** (the repo this `.cursorrules` lives in). Sibling frameworks (`.ai`, `.ai.ui`, `.ai.biz`) are then `{WORK_ROOT}/<framework>`.
+3. If neither resolves an existing sibling directory, stop routing with a one-line `framework not installed here` message — never silently route into the void.
 
 | Framework | Path | Director |
 |-----------|------|----------|
-| Agent OS (`.ai`) | `/mnt/work/Projects/.ai` | `@ai-director` |
-| UI Design OS (`.ai.ui`) | `/mnt/work/Projects/.ai.ui` | `@ui-director` |
-| Business OS (`.ai.biz`) | `/mnt/work/Projects/.ai.biz` | `@biz-director` |
-| Security OS (`.ai.soc`) | `/mnt/work/Projects/.ai.soc` | `@soc-director` |
+| Agent OS (`.ai`) | `{WORK_ROOT}/.ai` | `@ai-director` |
+| UI Design OS (`.ai.ui`) | `{WORK_ROOT}/.ai.ui` | `@ui-director` |
+| Business OS (`.ai.biz`) | `{WORK_ROOT}/.ai.biz` | `@biz-director` |
+| Security OS (`.ai.soc`) | `{WORK_ROOT}/.ai.soc` | `@soc-director` |
 
 ### Path resolution
 
-x-director and ai-director resolve frameworks from the table above. Preflight check before routing: verify the framework's `skills/README.md` exists at the declared path. If absent, stop routing with a one-line `framework not installed here` message — never silently route into the void.
+x-director and ai-director resolve frameworks from the table above. Substitute `{WORK_ROOT}` per the resolution rules at the top of this section before reading any framework path. Preflight check before routing: verify the framework's `skills/README.md` exists at the declared path. If absent, stop routing with a one-line `framework not installed here` message — never silently route into the void.
 
 Read these at the start of every conversation and when relevant:
 
@@ -147,8 +153,8 @@ UI milestone work is not done until: UI lint/type/tests pass; `@ui-visual-verify
 | `{HANDOFF_UI}` | `.work.ui/context/HANDOFF_UI.md` |
 | `{UI_ITERATION_CARRIER}` | `.work.ui/plans/NEXT_UI.md` |
 | `{SCREEN_SPEC_ROOT}` | `.work.ui/screens/` |
-| `{UI_SKILLS_ROOT}` | `/mnt/work/Projects/.ai.ui/skills/` |
-| `{UI_CONCEPTS_ROOT}` | `/mnt/work/Projects/.ai.ui/concepts/` |
+| `{UI_SKILLS_ROOT}` | `{WORK_ROOT}/.ai.ui/skills/` |
+| `{UI_CONCEPTS_ROOT}` | `{WORK_ROOT}/.ai.ui/concepts/` |
 
 ### UI skills (`@ui-*` only)
 
@@ -192,7 +198,7 @@ UI milestone work is not done until: UI lint/type/tests pass; `@ui-visual-verify
 | `{HANDOFF}` | `.work.biz/context/HANDOFF.md` |
 | `{NEXT}` | `.work.biz/plans/NEXT.md` |
 | `{PIPELINE_TRACKER}` | `.work.biz/pipeline/pipeline_tracker.md` |
-| `{SKILLS_ROOT}` | `/mnt/work/Projects/.ai.biz/skills/` |
+| `{SKILLS_ROOT}` | `{WORK_ROOT}/.ai.biz/skills/` |
 
 ### Business skills (`@biz-*`)
 

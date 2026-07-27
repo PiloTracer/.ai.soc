@@ -1,7 +1,7 @@
-# SOC-008 — declared touch scope (see .work.soc/plans/SOC-008-tool-improvement-plan.md)
+# SOC-010 — declared touch scope
 # One allowed path prefix per line. Trailing / allows everything under it.
-# Expanded during verification to cover the type-check/pre-commit cleanup
-# that the operator asked for.
+# Operator-authorized cross-area iteration: paths.py + tests/ + .cursorrules
+# (3 areas required to ship all three improvements in one iteration).
 strix/
 tests/
 Makefile
@@ -14,6 +14,7 @@ scripts/
 skills/
 templates/
 START_HERE.md
+.cursorrules
 .work.soc/plans/
 .work.soc/context/
 .work.soc/touch-scope

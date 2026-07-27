@@ -1,6 +1,6 @@
 # UNKNOWNS_SOC — SOC unknowns registry
 
-**Updated:** 2026-07-20 · **Maintained by:** soc-bootstrap / soc-assessment
+**Updated:** 2026-07-27 · **Maintained by:** soc-bootstrap / soc-assessment
 
 | ID | Question / blocker | Blocks | Owner | Status |
 |----|-------------------|--------|-------|--------|
@@ -18,3 +18,4 @@
 | 2026-06-30 | bootstrap | Initial template |
 | 2026-07-18 | SOC-008 session | Added U-SOC-04 (keyring choice, blocks SOC-008-J), U-SOC-05 (sandbox resource limits, blocks SOC-008-I), U-SOC-06 (no live-scan verification of E/F), U-SOC-07 (retroactive trust question re: the broken `uv run` toolchain found and fixed this session) |
 | 2026-07-20 | SOC-009 session | Extended U-SOC-06 to include SOC-009 `strix.log`; added U-SOC-08 (URL/multi-target output-dir auto-default not live-tested) |
+| 2026-07-27 | SOC-010 session | U-SOC-08 narrowed: SOC-010 closed the URL-default gap (`<cwd>/.work.soc` now used when no `--output-dir` and no local target inferred). What remains unverified is the *live Docker-bootstrapped* path for URL targets — static + unit verification covers the resolution ladder and run-name format, but no real scan wrote `strix.log` under `<cwd>/.work.soc/strix_runs/<run-name>/` this session. U-SOC-04 (keyring choice) and U-SOC-05 (sandbox resource limits) unchanged — both still block SOC-008-J / SOC-008-I. |
