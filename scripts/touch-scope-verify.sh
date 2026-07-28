@@ -33,10 +33,13 @@ if [ ${#ALLOWED[@]} -eq 0 ]; then
   exit 1
 fi
 
-# Collect changed files
+# Collect changed files. Untracked files count: a brand-new source file is
+# exactly the kind of out-of-scope addition this gate exists to catch, and
+# `git diff` never reports it.
 CHANGED="$(git diff --name-only HEAD 2>/dev/null || true)"
 STAGED="$(git diff --cached --name-only HEAD 2>/dev/null || true)"
-ALL_FILES="$(printf '%s\n%s' "${CHANGED}" "${STAGED}" | sort -u | grep -v '^$' || true)"
+UNTRACKED="$(git ls-files --others --exclude-standard 2>/dev/null || true)"
+ALL_FILES="$(printf '%s\n%s\n%s' "${CHANGED}" "${STAGED}" "${UNTRACKED}" | sort -u | grep -v '^$' || true)"
 
 if [ -z "$ALL_FILES" ]; then
   echo "touch-scope-verify: PASS (no changed files)"

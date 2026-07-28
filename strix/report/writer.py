@@ -187,9 +187,25 @@ def write_sarif(run_dir: Path, vulnerability_reports: list[dict[str, Any]]) -> N
         locations = _sarif_locations(report)
         if locations:
             result["locations"] = locations
+        # SOC-011 #3b: carry ``verified`` / ``vulnerability_class`` /
+        # ``verification_evidence`` into SARIF result.properties so a CI
+        # consumer (GitHub code scanning, DefectDojo, etc.) can filter
+        # unverified findings or split by class. The properties dict is
+        # built incrementally — pre-SOC-011 writes only put
+        # ``security-severity`` here; we just add the new keys.
+        properties: dict[str, Any] = {}
         cvss = report.get("cvss")
         if cvss is not None:
-            result["properties"] = {"security-severity": str(cvss)}
+            properties["security-severity"] = str(cvss)
+        if "verified" in report and report["verified"] is not None:
+            # SARIF properties values must be primitives; bool is fine.
+            properties["verified"] = bool(report["verified"])
+        if report.get("vulnerability_class"):
+            properties["vulnerability_class"] = str(report["vulnerability_class"])
+        if report.get("verification_evidence"):
+            properties["verification_evidence"] = str(report["verification_evidence"])
+        if properties:
+            result["properties"] = properties
         results.append(result)
 
     sarif_log = {

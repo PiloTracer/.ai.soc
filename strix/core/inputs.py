@@ -18,6 +18,82 @@ if TYPE_CHECKING:
 DEFAULT_MAX_TURNS = 500
 
 
+# SOC-011: per-scan-mode vulnerability-class checklist. Adds a concrete
+# coverage checklist to the root user task so the agent has explicit,
+# observable targets to report against. Each entry is a short OWASP-style
+# class label paired with a one-line description the agent recognizes.
+#
+# ``deep`` is a strict superset of ``standard`` which is a strict superset
+# of ``quick``; the agent gets MORE classes as it slows down, never
+# different ones — so the coverage report downstream (computed from
+# filed findings' ``vulnerability_class`` field) ranks on a single axis.
+_SCAN_MODE_CHECKLISTS: dict[str, list[tuple[str, str]]] = {
+    "quick": [
+        ("A01", "Broken Access Control (IDOR, missing authz, privilege escalation)"),
+        ("A02", "Cryptographic Failures (weak ciphers, hardcoded secrets, plaintext transit)"),
+        ("A03", "Injection (SQLi, command injection, XSS, prompt injection)"),
+    ],
+    "standard": [
+        ("A01", "Broken Access Control (IDOR, missing authz, privilege escalation)"),
+        ("A02", "Cryptographic Failures (weak ciphers, hardcoded secrets, plaintext transit)"),
+        ("A03", "Injection (SQLi, command injection, XSS, prompt injection)"),
+        ("A04", "Insecure Design (missing rate-limit, business-logic flaws, abuse cases)"),
+        ("A05", "Security Misconfiguration (default creds, verbose errors, open S3)"),
+        ("A06", "Vulnerable & Outdated Components (known-CVE deps, stale packages)"),
+        ("A07", "Identification & Auth Failures (credential stuffing, weak password reset)"),
+    ],
+    "deep": [
+        ("A01", "Broken Access Control (IDOR, missing authz, privilege escalation)"),
+        ("A02", "Cryptographic Failures (weak ciphers, hardcoded secrets, plaintext transit)"),
+        ("A03", "Injection (SQLi, command injection, XSS, prompt injection)"),
+        ("A04", "Insecure Design (missing rate-limit, business-logic flaws, abuse cases)"),
+        ("A05", "Security Misconfiguration (default creds, verbose errors, open S3)"),
+        ("A06", "Vulnerable & Outdated Components (known-CVE deps, stale packages)"),
+        ("A07", "Identification & Auth Failures (credential stuffing, weak password reset)"),
+        ("A08", "Software & Data Integrity Failures (unsigned updates, deserialization)"),
+        ("A09", "Security Logging & Monitoring Failures (no audit trail, blind spots)"),
+        ("A10", "Server-Side Request Forgery (SSRF, internal endpoint exposure)"),
+        (
+            "BIZ",
+            "Business-logic & race conditions (TOCTOU, concurrency abuse, "
+            "negative-balance, multi-step abuse)",
+        ),
+    ],
+}
+
+
+def get_scan_mode_checklist(scan_mode: str | None) -> list[tuple[str, str]]:
+    """Return the (class_id, description) pairs for a scan mode.
+
+    Unknown / missing scan mode falls back to ``standard`` (best-practice
+    baseline) rather than raising — preserving the "easy" UX: a
+    mis-named mode does not abort a scan.
+    """
+    key = (scan_mode or "").strip().lower()
+    if key not in _SCAN_MODE_CHECKLISTS:
+        key = "standard"
+    return list(_SCAN_MODE_CHECKLISTS[key])
+
+
+def _format_checklist_block(scan_mode: str | None) -> str:
+    checklist = get_scan_mode_checklist(scan_mode)
+    # Leading blank entries produce the "\n\n" separator every other
+    # section of the root task uses (parts are combined with " ".join,
+    # so each part carries its own leading newlines).
+    lines = ["", "", "Vulnerability-class coverage checklist (file findings against these):"]
+    for class_id, desc in checklist:
+        lines.append(f"- {class_id}: {desc}")
+    lines.append("")
+    lines.append(
+        "When filing each vulnerability report, populate the "
+        "vulnerability_class field with the matching checklist ID "
+        "(e.g. A03) so the coverage report can map findings back to "
+        "this checklist. Findings outside this list are still fileable "
+        "— the checklist is a coverage target, not a constraint."
+    )
+    return "\n".join(lines)
+
+
 def build_root_task(scan_config: dict[str, Any]) -> str:
     targets = scan_config.get("targets", []) or []
     diff_scope = scan_config.get("diff_scope") or {}
@@ -56,6 +132,16 @@ def build_root_task(scan_config: dict[str, Any]) -> str:
         if items:
             parts.append(f"\n\n{label}:")
             parts.extend(items)
+
+    # SOC-011: per-scan-mode vulnerability-class checklist — drives
+    # explicit coverage in the root user task. The system prompt already
+    # loads the ``scan_modes/<mode>`` persona skill; this gives the agent
+    # a concrete, measurable target so the coverage report downstream is
+    # meaningful. Gated on having at least one real target — preserves
+    # the pre-SOC-011 contract that an empty scan_config returns ``""``
+    # (callers use that as a sentinel for "nothing to do").
+    if any(sections.values()):
+        parts.append(_format_checklist_block(scan_config.get("scan_mode")))
 
     if diff_scope.get("active"):
         parts.append("\n\nScope Constraints:")

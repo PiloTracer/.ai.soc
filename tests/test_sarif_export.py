@@ -130,3 +130,87 @@ def test_write_sarif_handles_empty_report_list(tmp_path: Path) -> None:
     log = json.loads((tmp_path / "vulnerabilities.sarif").read_text(encoding="utf-8"))
     assert log["runs"][0]["results"] == []
     assert log["runs"][0]["tool"]["driver"]["rules"] == []
+
+
+# --- SOC-011 #3b: verified / vulnerability_class / verification_evidence ---
+
+
+def test_write_sarif_carries_verified_true_into_properties(tmp_path: Path) -> None:
+    """A finding filed with ``verified=True`` (the create_vulnerability_report
+    default) must surface that fact in SARIF properties so a downstream
+    consumer can prove the assertion was made."""
+    write_sarif(tmp_path, [_report(verified=True, verification_evidence="HTTP 200 echoed payload")])
+
+    log = json.loads((tmp_path / "vulnerabilities.sarif").read_text(encoding="utf-8"))
+    props = log["runs"][0]["results"][0]["properties"]
+    assert props["verified"] is True
+    assert props["verification_evidence"] == "HTTP 200 echoed payload"
+
+
+def test_write_sarif_carries_verified_false_into_properties(tmp_path: Path) -> None:
+    """A finding explicitly filed with ``verified=False`` must mark that
+    in SARIF properties so a CI consumer can filter unverified findings."""
+    write_sarif(
+        tmp_path,
+        [
+            _report(
+                verified=False,
+                verification_evidence="PoC attempted, response signature did not match",
+            )
+        ],
+    )
+
+    log = json.loads((tmp_path / "vulnerabilities.sarif").read_text(encoding="utf-8"))
+    props = log["runs"][0]["results"][0]["properties"]
+    assert props["verified"] is False
+    assert "did not match" in props["verification_evidence"]
+
+
+def test_write_sarif_omits_verified_property_when_field_absent(tmp_path: Path) -> None:
+    """Pre-SOC-011 findings (re-loaded from disk on resume) lack the
+    ``verified`` field entirely. SARIF must NOT synthesize a default —
+    the absence of the assertion is itself the truth (verification state
+    unknown), and inventing ``verified=true`` would be a lie."""
+    write_sarif(tmp_path, [_report()])
+
+    log = json.loads((tmp_path / "vulnerabilities.sarif").read_text(encoding="utf-8"))
+    props = log["runs"][0]["results"][0].get("properties", {})
+    assert "verified" not in props
+    assert "verification_evidence" not in props
+
+
+def test_write_sarif_carries_vulnerability_class_into_properties(tmp_path: Path) -> None:
+    """A finding that maps back to the per-scan-mode checklist must
+    surface the class ID in SARIF properties so the coverage report
+    downstream can rank scans on a single axis."""
+    write_sarif(tmp_path, [_report(vulnerability_class="A03")])
+
+    log = json.loads((tmp_path / "vulnerabilities.sarif").read_text(encoding="utf-8"))
+    props = log["runs"][0]["results"][0]["properties"]
+    assert props["vulnerability_class"] == "A03"
+
+
+def test_write_sarif_preserves_security_severity_alongside_new_properties(tmp_path: Path) -> None:
+    """Existing CVSS-in-properties behavior must not regress when the new
+    SOC-011 keys are added — ``security-severity`` is what GitHub code
+    scanning uses to rank findings, so it must still be there."""
+    write_sarif(
+        tmp_path,
+        [_report(cvss=9.8, verified=True, vulnerability_class="A01")],
+    )
+
+    log = json.loads((tmp_path / "vulnerabilities.sarif").read_text(encoding="utf-8"))
+    props = log["runs"][0]["results"][0]["properties"]
+    assert props["security-severity"] == "9.8"
+    assert props["verified"] is True
+    assert props["vulnerability_class"] == "A01"
+
+
+def test_write_sarif_omits_vulnerability_class_when_field_absent(tmp_path: Path) -> None:
+    """Old findings (pre-SOC-011) and findings where the agent legitimately
+    has no class to assign must NOT get a synthesized class in SARIF."""
+    write_sarif(tmp_path, [_report()])
+
+    log = json.loads((tmp_path / "vulnerabilities.sarif").read_text(encoding="utf-8"))
+    props = log["runs"][0]["results"][0].get("properties", {})
+    assert "vulnerability_class" not in props

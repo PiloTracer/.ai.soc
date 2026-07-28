@@ -451,6 +451,21 @@ Examples:
     )
 
     parser.add_argument(
+        "--exclude-unverified",
+        action="store_true",
+        help=(
+            "SOC-011 — when set, only findings the agent explicitly filed with "
+            "verified=true (backed by verification_evidence) count toward the "
+            "--fail-on exit code. Findings filed with verified=false, and those "
+            "where the agent made no verification assertion at all, are EXCLUDED. "
+            "Default OFF preserves the 'count every filing' behavior. Note that "
+            "agents are not required to assert verification, so this flag can "
+            "filter out real findings — the run prints how many it dropped. "
+            "SARIF still carries every finding regardless."
+        ),
+    )
+
+    parser.add_argument(
         "-m",
         "--scan-mode",
         type=str,
@@ -657,7 +672,13 @@ def confirm_target_authorization(args: argparse.Namespace, parser: argparse.Argu
     args.authorization_confirmed_interactively = True
 
 
-def should_fail_on_severity(severities: list[str], threshold: str) -> bool:
+def should_fail_on_severity(
+    severities: list[str],
+    threshold: str,
+    *,
+    exclude_unverified: bool = False,
+    verified_flags: list[bool | None] | None = None,
+) -> bool:
     """True iff a non-interactive run's exit code should be 2 (findings threshold met).
 
     Pure and side-effect-free so it's unit-testable without a full scan
@@ -673,17 +694,45 @@ def should_fail_on_severity(severities: list[str], threshold: str) -> bool:
       above (numerically at or below) ``threshold``. An unrecognized severity
       string is treated as the least severe rank ("info"), never causing a
       false failure.
+
+    SOC-011 #3c — ``exclude_unverified`` (default ``False``, preserving
+    pre-SOC-011 behavior): when ``True``, findings whose matching entry
+    in ``verified_flags`` is anything other than ``True`` are excluded
+    from the comparison. ``verified_flags`` MUST be the same length as
+    ``severities`` when supplied; on ANY length mismatch (shorter or
+    longer) every finding is treated as ``verified=False`` AND excluded
+    — the safe direction (filter out rather than fabricate
+    verification). A mismatch means the caller's two lists were built
+    from different sources, so no pairing can be trusted.
     """
     if threshold == "none":
         return False
+
+    # SOC-011 #3c: pair each severity with its verified flag, then filter.
+    if exclude_unverified:
+        if verified_flags is None or len(verified_flags) != len(severities):
+            # No trustworthy verification info → can't confirm anything →
+            # exclude all. This is the conservative direction: never
+            # fail the build on unverified findings when the operator
+            # asked to filter. Length mismatch in EITHER direction lands
+            # here rather than reaching the strict zip below.
+            return False
+        paired = [
+            sev
+            for sev, verified in zip(severities, verified_flags, strict=True)
+            if verified is True
+        ]
+    else:
+        paired = severities
+
     if threshold == "any":
-        return bool(severities)
+        return bool(paired)
 
     threshold_rank = SEVERITY_ORDER.get(threshold, SEVERITY_ORDER["low"])
     lowest_rank = SEVERITY_ORDER["info"]
     return any(
         SEVERITY_ORDER.get(str(severity).lower(), lowest_rank) <= threshold_rank
-        for severity in severities
+        for severity in paired
     )
 
 
@@ -1004,7 +1053,34 @@ def main() -> None:
             report_state = get_global_report_state()
             if report_state and report_state.vulnerability_reports:
                 severities = [r.get("severity", "") for r in report_state.vulnerability_reports]
-                if should_fail_on_severity(severities, args.fail_on):
+                # SOC-011 #3c: optionally exclude unverified findings from
+                # the ``--fail-on`` count when ``--exclude-unverified`` is
+                # set. ``verified`` may be absent on findings re-loaded
+                # from disk on resume (pre-SOC-011 runs); those are
+                # treated as ``verified=False`` so they're excluded only
+                # when the operator opted in. Default (no flag) preserves
+                # today's "count every filing" behavior exactly.
+                verified_flags = [
+                    r.get("verified", False) for r in report_state.vulnerability_reports
+                ]
+                if getattr(args, "exclude_unverified", False):
+                    dropped = sum(1 for v in verified_flags if v is not True)
+                    if dropped:
+                        # Silent-pass guard: without this the operator sees
+                        # exit code 0 and has no way to know the filter is
+                        # what produced it.
+                        Console().print(
+                            f"[yellow]--exclude-unverified: {dropped} of "
+                            f"{len(verified_flags)} finding(s) excluded from the "
+                            f"--fail-on exit code (no verified=true assertion). "
+                            f"They remain in the report and SARIF output.[/yellow]"
+                        )
+                if should_fail_on_severity(
+                    severities,
+                    args.fail_on,
+                    exclude_unverified=getattr(args, "exclude_unverified", False),
+                    verified_flags=verified_flags,
+                ):
                     sys.exit(2)
     except Exception:
         logger.exception("Scan run %s aborted before completion", args.run_name)

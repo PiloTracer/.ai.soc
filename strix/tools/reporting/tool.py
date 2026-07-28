@@ -169,6 +169,9 @@ async def _do_create(  # noqa: PLR0912
     code_locations: list[dict[str, Any]] | None,
     agent_id: str | None = None,
     agent_name: str | None = None,
+    vulnerability_class: str | None = None,
+    verified: bool | None = None,
+    verification_evidence: str | None = None,
 ) -> dict[str, Any]:
     errors: list[str] = []
     fields = {
@@ -207,6 +210,33 @@ async def _do_create(  # noqa: PLR0912
         cwe_err = _validate_cwe(cwe)
         if cwe_err:
             errors.append(cwe_err)
+    # SOC-011 #3a: an assertion about verification — in EITHER direction —
+    # must come with evidence. The default is ``None`` ("agent did not
+    # assert"), which persists as null and is omitted from SARIF, so a
+    # downstream consumer never sees a bare ``verified: true`` that was
+    # really just an unexamined default. Requiring evidence for the true
+    # case is the point: a verification claim nobody can audit is worse
+    # than no claim, because it invites over-trust.
+    if verified is not None and not (verification_evidence or "").strip():
+        detail = (
+            "describe the request/response (or command and output) that reproduced the issue"
+            if verified
+            else "describe what PoC was attempted and why it did not "
+            "reproduce the documented response, so an operator can "
+            "decide whether to act on this unverified finding"
+        )
+        errors.append(
+            f"verification_evidence is REQUIRED when verified={str(verified).lower()} — {detail}. "
+            "Omit the verified field entirely if you did not attempt "
+            "reproduction; do not assert a verification you cannot show."
+        )
+    if vulnerability_class is not None:
+        vc = vulnerability_class.strip().upper()
+        if vc and not vc[0].isalpha():
+            errors.append(
+                f"vulnerability_class must start with a letter (got '{vc}'); "
+                f"use OWASP-style IDs like 'A03' or a free-form class name."
+            )
 
     if errors:
         return {"success": False, "error": "Validation failed", "errors": errors}
@@ -277,6 +307,9 @@ async def _do_create(  # noqa: PLR0912
             code_locations=parsed_locations,
             agent_id=agent_id if isinstance(agent_id, str) else None,
             agent_name=agent_name if isinstance(agent_name, str) else None,
+            vulnerability_class=vulnerability_class,
+            verified=verified,
+            verification_evidence=verification_evidence,
         )
     except (ImportError, AttributeError) as e:
         logger.exception("create_vulnerability_report persistence failed")
@@ -315,6 +348,9 @@ async def create_vulnerability_report(
     cve: str | None = None,
     cwe: str | None = None,
     code_locations: list[dict[str, Any]] | None = None,
+    vulnerability_class: str | None = None,
+    verified: bool | None = None,
+    verification_evidence: str | None = None,
 ) -> str:
     """File a vulnerability report — one report per fully-verified finding.
 
@@ -482,6 +518,31 @@ async def create_vulnerability_report(
             - Padding ``fix_before`` with surrounding context lines
               that aren't part of the fix.
             - Duplicating the same change across multiple locations.
+
+        vulnerability_class: Optional OWASP-style class ID from the
+            per-scan-mode checklist injected into the root task
+            (e.g. ``A03``, ``BIZ``). Maps this finding back to the
+            coverage target so the coverage report can rank scans
+            on a single axis. Free-form class names are also accepted
+            (case-insensitive, must start with a letter). Omit when the
+            finding spans multiple classes or doesn't fit the checklist.
+        verified: Whether you actually RAN the PoC and observed it
+            reproduce the vulnerability. Leave this unset (the default)
+            if you did not attempt reproduction — an omitted field
+            honestly records "not asserted" and is left out of the SARIF
+            export entirely. Set ``True`` only when you executed the PoC
+            and saw it work; set ``False`` when you attempted it and it
+            did not reproduce. Either assertion REQUIRES
+            ``verification_evidence`` — a verification claim an operator
+            cannot audit is worse than no claim. Operators can filter
+            CI failures down to ``verified=True`` findings via
+            ``--exclude-unverified``.
+        verification_evidence: Short free-text showing your work: the
+            request/response or command/output that reproduced the issue
+            (when ``verified=True``), or what was attempted and why it
+            did not reproduce (when ``verified=False``). Becomes part of
+            the SARIF report so a downstream consumer can audit the
+            verification claim. Mandatory whenever ``verified`` is set.
     """
     inner = ctx.context if isinstance(ctx.context, dict) else {}
     raw_agent_id = inner.get("agent_id")
@@ -511,5 +572,8 @@ async def create_vulnerability_report(
         code_locations=code_locations,
         agent_id=agent_id,
         agent_name=agent_name,
+        vulnerability_class=vulnerability_class,
+        verified=verified,
+        verification_evidence=verification_evidence,
     )
     return json.dumps(result, ensure_ascii=False, default=str)

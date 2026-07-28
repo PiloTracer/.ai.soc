@@ -157,6 +157,9 @@ class ReportState:
         code_locations: list[dict[str, Any]] | None = None,
         agent_id: str | None = None,
         agent_name: str | None = None,
+        vulnerability_class: str | None = None,
+        verified: bool | None = None,
+        verification_evidence: str | None = None,
     ) -> str:
         report_id = f"vuln-{len(self.vulnerability_reports) + 1:04d}"
 
@@ -165,6 +168,14 @@ class ReportState:
             "title": title.strip(),
             "severity": severity.lower().strip(),
             "timestamp": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC"),
+            # SOC-011 #3a: verification is first-class. ``verified=null``
+            # means "no assertion was made" — either a pre-SOC-011
+            # finding re-loaded from disk on resume, or an agent that
+            # filed without attempting reproduction. That is also the
+            # tool's default, so SARIF / ``--exclude-unverified`` /
+            # coverage reports never see a verification claim that
+            # nothing backs.
+            "verified": verified,
         }
 
         if description:
@@ -199,6 +210,20 @@ class ReportState:
             report["agent_id"] = agent_id
         if agent_name:
             report["agent_name"] = agent_name
+        # SOC-011 #2b: link a filed finding back to the per-scan-mode
+        # vulnerability-class checklist injected into the root task. The
+        # field is OPTIONAL — older agents that don't populate it leave
+        # ``vulnerability_class`` out entirely; the coverage report
+        # downstream treats absent class as "unclassified" (not failed).
+        if vulnerability_class:
+            report["vulnerability_class"] = vulnerability_class.strip().upper()
+        # SOC-011 #3a: free-text evidence backing the ``verified`` flag.
+        # Required only when ``verified`` differs from the
+        # ``create_vulnerability_report`` tool's default of True (e.g.
+        # the agent attempted a PoC but could not reproduce the
+        # documented response signature).
+        if verification_evidence:
+            report["verification_evidence"] = verification_evidence.strip()
 
         self.vulnerability_reports.append(report)
         logger.info(f"Added vulnerability report: {report_id} - {title}")
@@ -247,7 +272,20 @@ class ReportState:
         methodology: str,
         technical_analysis: str,
         recommendations: str,
+        synthesized: bool = False,
     ) -> None:
+        """Write the four report sections and mark the run complete.
+
+        ``synthesized=True`` marks a completion envelope that was
+        reconstructed from filed findings because the agent never called
+        ``finish_scan`` (SOC-011). The flag lives INSIDE ``scan_results``
+        so a consumer reading ``scan_results.success`` sees the caveat in
+        the same object rather than having to know to look for the
+        sibling ``run_record["synthesized_completion"]`` key. ``success``
+        reports whether report artifacts were produced, not whether the
+        agent terminated cleanly — ``synthesized`` is what distinguishes
+        the two.
+        """
         self.scan_results = {
             "scan_completed": True,
             "executive_summary": executive_summary.strip(),
@@ -255,15 +293,17 @@ class ReportState:
             "technical_analysis": technical_analysis.strip(),
             "recommendations": recommendations.strip(),
             "success": True,
+            "synthesized": synthesized,
         }
 
         self.final_scan_result = self._format_final_scan_result(self.scan_results)
         self.run_record["scan_results"] = self.scan_results
 
-        logger.info("Updated scan final fields")
+        logger.info("Updated scan final fields (synthesized=%s)", synthesized)
         self.save_run_data(mark_complete=True)
-        posthog.end(self, exit_reason="finished_by_tool")
-        scarf.end(self, exit_reason="finished_by_tool")
+        exit_reason = "synthesized_from_findings" if synthesized else "finished_by_tool"
+        posthog.end(self, exit_reason=exit_reason)
+        scarf.end(self, exit_reason=exit_reason)
 
     def set_scan_config(self, config: dict[str, Any]) -> None:
         self.scan_config = config

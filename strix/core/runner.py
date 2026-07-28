@@ -302,6 +302,18 @@ async def run_strix_scan(
                     scan_id,
                     str(final)[:300],
                 )
+                # SOC-011: salvage the run. If the agent already filed real
+                # vulnerability reports (via ``create_vulnerability_report``)
+                # but failed to call ``finish_scan``, the executive report,
+                # SARIF export, completion panel, and ``--fail-on`` exit code
+                # would all be silently skipped — even though the operator has
+                # actionable findings. Synthesize a minimal completion
+                # envelope from the filed findings so downstream artifacts
+                # still write. Pure delegation to a unit-testable helper; no
+                # behavior change on the ``scan_completed=true`` happy path.
+                from strix.core.runner_completion import synthesize_completion_from_findings
+
+                synthesize_completion_from_findings(scan_id=scan_id, final_output=final)
         return result  # noqa: TRY300
     except BudgetExceededError as exc:
         logger.info("Scan %s stopped: %s", scan_id, exc)

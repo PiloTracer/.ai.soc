@@ -8,9 +8,12 @@ if [ "$SELF_TEST" = "--self-test" ]; then
   exit 0
 fi
 
+# Untracked files are part of the blast radius — new files in a new
+# top-level area are exactly what this gate should be counting.
 CHANGED="$(git diff --name-only HEAD 2>/dev/null || true)"
 STAGED="$(git diff --cached --name-only HEAD 2>/dev/null || true)"
-ALL_FILES="$(printf '%s\n%s' "${CHANGED}" "${STAGED}" | sort -u | grep -v '^$' || true)"
+UNTRACKED="$(git ls-files --others --exclude-standard 2>/dev/null || true)"
+ALL_FILES="$(printf '%s\n%s\n%s' "${CHANGED}" "${STAGED}" "${UNTRACKED}" | sort -u | grep -v '^$' || true)"
 
 if [ -z "$ALL_FILES" ]; then
   echo "blast-radius: files=0 areas=0 risk=low"

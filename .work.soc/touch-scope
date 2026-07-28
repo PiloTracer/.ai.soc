@@ -1,16 +1,19 @@
-# SOC-010 — declared touch scope
+# SOC-011 — declared touch scope
 # One allowed path prefix per line. Trailing / allows everything under it.
-# Operator-authorized cross-area iteration: paths.py + tests/ + .cursorrules
-# (3 areas required to ship all three improvements in one iteration).
+# Operator-authorized cross-area iteration: 3 scanning-level improvements
+# (finish-scan synthesis + per-mode checklist + verified field) — spans
+# strix/, tests/, .work.soc/. Same cross-area precedent as SOC-010.
+#
+# Files protected by .cursorrules (pyproject.toml, Makefile,
+# .pre-commit-config.yaml, .github/, Containers/Dockerfile, .env*) are
+# deliberately NOT listed here. Declaring them in scope would let this
+# gate go green on exactly the edit the protection exists to stop. If a
+# protected file genuinely needs changing, get per-case operator
+# approval first and add the single path then.
 strix/
 tests/
-Makefile
-NOTICE
-pyproject.toml
-.pre-commit-config.yaml
-uv.lock
-.github/
 scripts/
+NOTICE
 skills/
 templates/
 START_HERE.md
