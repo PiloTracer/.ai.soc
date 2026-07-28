@@ -8,8 +8,18 @@
 # .pre-commit-config.yaml, .github/, Containers/Dockerfile, .env*) are
 # deliberately NOT listed here. Declaring them in scope would let this
 # gate go green on exactly the edit the protection exists to stop. If a
-# protected file genuinely needs changing, get per-case operator
-# approval first and add the single path then.
+# protected file genuinely needs changing, get per-case operator approval
+# first and add the single path then.
+#
+# Standing blast-radius authorization (operator, 2026-07-27): operator
+# granted standing approval to operate across up to 4 top-level areas
+# per iteration, so multi-area SOC iterations (SOC-010, SOC-011
+# precedent) and gate-hardening work don't trip the gate mechanically.
+# This does NOT exempt the touch-scope-verify or framework-verify
+# gates; protected-files rule still applies; per-DLP destructive
+# operations still require per-message approval. Remove this marker
+# line to restore the default-2 limit immediately.
+# BLAST_RADIUS_MAX_AREAS: 4
 strix/
 tests/
 scripts/
