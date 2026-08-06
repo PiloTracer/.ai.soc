@@ -1,25 +1,24 @@
-# SOC-011 — declared touch scope
+# Release 0.5.0 — declared touch scope
 # One allowed path prefix per line. Trailing / allows everything under it.
-# Operator-authorized cross-area iteration: 3 scanning-level improvements
-# (finish-scan synthesis + per-mode checklist + verified field) — spans
-# strix/, tests/, .work.soc/. Same cross-area precedent as SOC-010.
+# Operator-authorized iteration (same-message request): verify the SOC skill
+# rename (deploy-* / session-soc → soc-deploy-* / soc-session), fix gate
+# bugs, and commit+push everything as release 0.5.0. Spans docs, scripts,
+# skills, templates, and quick guides by nature of the rename.
 #
-# Files protected by .cursorrules (pyproject.toml, Makefile,
-# .pre-commit-config.yaml, .github/, Containers/Dockerfile, .env*) are
-# deliberately NOT listed here. Declaring them in scope would let this
-# gate go green on exactly the edit the protection exists to stop. If a
-# protected file genuinely needs changing, get per-case operator approval
-# first and add the single path then.
+# Protected files: pyproject.toml is listed here ONLY because the operator
+# explicitly requested the 0.5.0 version bump in the current message
+# (per-case approval, not standing). All other protected files
+# (Makefile, .pre-commit-config.yaml, .github/, Containers/Dockerfile,
+# .env*) remain out of scope.
 #
-# Standing blast-radius authorization (operator, 2026-07-27): operator
-# granted standing approval to operate across up to 4 top-level areas
-# per iteration, so multi-area SOC iterations (SOC-010, SOC-011
-# precedent) and gate-hardening work don't trip the gate mechanically.
-# This does NOT exempt the touch-scope-verify or framework-verify
-# gates; protected-files rule still applies; per-DLP destructive
-# operations still require per-message approval. Remove this marker
-# line to restore the default-2 limit immediately.
-# BLAST_RADIUS_MAX_AREAS: 4
+# Blast-radius authorization for THIS release iteration (operator,
+# 2026-08-06, same-message "commit and push all changes as version 0.5.0"):
+# the rename touches 10 top-level areas (.cursorrules, .gitignore, .quick/,
+# .work.soc/, START_HERE.md, pyproject.toml, uv.lock, scripts/, skills/,
+# templates/).
+# Supersedes the earlier standing 4-area grant for this iteration only.
+# Remove this marker line to restore the default-2 limit immediately.
+# BLAST_RADIUS_MAX_AREAS: 10
 strix/
 tests/
 scripts/
@@ -28,6 +27,11 @@ skills/
 templates/
 START_HERE.md
 .cursorrules
+.gitignore
+pyproject.toml
+uv.lock
+.quick/
 .work.soc/plans/
 .work.soc/context/
+.work.soc/reports/
 .work.soc/touch-scope

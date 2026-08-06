@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deploy-basic.sh — Thin-client bootstrap of .ai.soc into a target project.
+# soc-deploy-basic.sh — Thin-client bootstrap of .ai.soc into a target project.
 #
 # Copies ONLY the minimal scaffold into the target:
 #   - .cursorrules SOC block snippet (appended / created) with SOC_SOURCE pointer
@@ -16,15 +16,15 @@
 #
 # Source resolution: SOC_ROOT is derived from this script's location, so the
 # script can be invoked from a TARGET using an external source .ai.soc:
-#   bash /mnt/work/Projects/.ai.soc/scripts/deploy-basic.sh /mnt/work/Projects/tools-project
+#   bash /mnt/work/Projects/.ai.soc/scripts/soc-deploy-basic.sh /mnt/work/Projects/tools-project
 # Override the source with SOC_SOURCE=/abs/path/.ai.soc if needed.
 #
 # Usage:
-#   bash scripts/deploy-basic.sh <target-path>              # no-overwrite (skip existing)
-#   bash scripts/deploy-basic.sh --status [target-path]   # read-only report
-#   bash scripts/deploy-basic.sh <target-path> --update    # no-overwrite + merge candidate list
-#   bash scripts/deploy-basic.sh <target-path> --force     # overwrite local scaffold (legacy)
-#   SOC_SOURCE=/path/.ai.soc bash scripts/deploy-basic.sh <target-path>
+#   bash scripts/soc-deploy-basic.sh <target-path>              # no-overwrite (skip existing)
+#   bash scripts/soc-deploy-basic.sh --status [target-path]   # read-only report
+#   bash scripts/soc-deploy-basic.sh <target-path> --update    # no-overwrite + merge candidate list
+#   bash scripts/soc-deploy-basic.sh <target-path> --force     # overwrite local scaffold (legacy)
+#   SOC_SOURCE=/path/.ai.soc bash scripts/soc-deploy-basic.sh <target-path>
 #
 set -euo pipefail
 
@@ -37,7 +37,7 @@ if [[ "${1:-}" == "--status" ]]; then
     DEST_ROOT="$(cd "$RAW_TARGET" && pwd)"
   fi
   CURS_DEST="${DEST_ROOT}/.cursorrules"
-  echo "=== deploy-basic status → $DEST_ROOT ==="
+  echo "=== soc-deploy-basic status → $DEST_ROOT ==="
   if [[ -f "$CURS_DEST" ]]; then
     echo "  .cursorrules: present"
     if grep -q 'SOC_DESIGN_OS_BEGIN' "$CURS_DEST" 2>/dev/null; then
@@ -93,7 +93,7 @@ fi
 TPL_CURS="${SOC_ROOT}/templates/cursorrules.soc.snippet.template"
 TPL_WORK="${SOC_ROOT}/templates/work"
 
-echo "=== deploy-basic (thin-client) → $DEST_ROOT ==="
+echo "=== soc-deploy-basic (thin-client) → $DEST_ROOT ==="
 echo "  source: $SOC_ROOT"
 echo "  mode:   $MODE (no-overwrite by default)"
 
@@ -136,9 +136,9 @@ fi
 
 # Step 2: .work.soc/ skeleton via bootstrap.sh (no-overwrite).
 BOOTSTRAP_SKIP_CURSERRULES=1 REPO_ROOT="$DEST_ROOT" bash "$SOC_ROOT/templates/bootstrap.sh" \
-  > /tmp/deploy-basic-bootstrap.$$.log 2>&1 || { cat /tmp/deploy-basic-bootstrap.$$.log; rm -f /tmp/deploy-basic-bootstrap.$$.log; exit 1; }
-grep -E '(created:|skip )' /tmp/deploy-basic-bootstrap.$$.log | sed 's/^/  work: /' || true
-rm -f /tmp/deploy-basic-bootstrap.$$.log
+  > /tmp/soc-deploy-basic-bootstrap.$$.log 2>&1 || { cat /tmp/soc-deploy-basic-bootstrap.$$.log; rm -f /tmp/soc-deploy-basic-bootstrap.$$.log; exit 1; }
+grep -E '(created:|skip )' /tmp/soc-deploy-basic-bootstrap.$$.log | sed 's/^/  work: /' || true
+rm -f /tmp/soc-deploy-basic-bootstrap.$$.log
 
 # Step 3: --update — list merge candidates.
 if [[ "$MODE" == "update" ]]; then
@@ -162,7 +162,7 @@ if [[ "$MODE" == "update" ]]; then
     fi
   done
   echo "  (agent performs rules-aware merge — append new sections, preserve target"
-  echo "   customizations. See skill deploy-basic/skill.md § update-merge.)"
+  echo "   customizations. See skill soc-deploy-basic/skill.md § update-merge.)"
 fi
 
 echo ""
@@ -174,4 +174,4 @@ echo ""
 echo "Next steps in target project:"
 echo "  1. Skills load from \$SOC_SOURCE at runtime (thin-client mode)"
 echo "  2. Verify source reachable: test -d \"\$(grep -oE 'SOC_SOURCE=[^ ]*' $CURS_DEST | cut -d= -f2-)\""
-echo "  3. Run @session-soc start"
+echo "  3. Run @soc-session start"

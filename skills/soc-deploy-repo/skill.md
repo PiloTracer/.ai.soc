@@ -1,23 +1,23 @@
 ---
-name: deploy-repo
+name: soc-deploy-repo
 description: >-
   Full git-based deploy of .ai.soc into a target directory. Two modes:
   clone (git clone with full history via origin remote) or archive
   (git archive extract including .github, .gitignore, .cursorrules).
   Use clone for a full git mirror; use archive when no remote is available
-  or when updating an existing target. deploy-repo clone - <path>,
-  deploy-repo archive - <path>, deploy-repo status.
+  or when updating an existing target. soc-deploy-repo clone - <path>,
+  soc-deploy-repo archive - <path>, soc-deploy-repo status.
 ---
 
-# deploy-repo
+# soc-deploy-repo
 
-**Shell:** `bash .ai.soc/scripts/deploy-repo.sh [--status [path] | <clone|archive> <target-path>]`
+**Shell:** `bash .ai.soc/scripts/soc-deploy-repo.sh [--status [path] | <clone|archive> <target-path>]`
 
 Deploys the entire `.ai.soc` repository (including `.git/`, `.github/`, `.gitignore`, and root `.cursorrules`) into a target directory. Two modes cover both git-mirror and snapshot deployments.
 
-**Canonical path:** `.ai.soc/skills/deploy-repo/skill.md` · **Shell:** `.ai.soc/scripts/deploy-repo.sh`
+**Canonical path:** `.ai.soc/skills/soc-deploy-repo/skill.md` · **Shell:** `.ai.soc/scripts/soc-deploy-repo.sh`
 
-**Contrast with `deploy-files`:** `deploy-repo` includes VCS artifacts. Use `@deploy-files copy` when you only need the `.ai.soc/` directory without git history or `.github/`.
+**Contrast with `soc-deploy-files`:** `soc-deploy-repo` includes VCS artifacts. Use `@soc-deploy-files copy` when you only need the `.ai.soc/` directory without git history or `.github/`.
 
 ---
 
@@ -25,11 +25,11 @@ Deploys the entire `.ai.soc` repository (including `.git/`, `.github/`, `.gitign
 
 | User says | Mode |
 |-----------|------|
-| `@deploy-repo clone - /path/to/repo` | Full `git clone` from origin remote to target path |
-| `@deploy-repo archive - /path/to/repo` | `git archive HEAD \| tar xf` — full tree, no `.git` |
-| `@deploy-repo status` | Report source remote, HEAD, optional target deploy state |
+| `@soc-deploy-repo clone - /path/to/repo` | Full `git clone` from origin remote to target path |
+| `@soc-deploy-repo archive - /path/to/repo` | `git archive HEAD \| tar xf` — full tree, no `.git` |
+| `@soc-deploy-repo status` | Report source remote, HEAD, optional target deploy state |
 
-**Shell (read-only):** `bash scripts/deploy-repo.sh --status [target-path]`
+**Shell (read-only):** `bash scripts/soc-deploy-repo.sh --status [target-path]`
 
 **Default:** `status` if no verb matches.
 
@@ -48,7 +48,7 @@ Deploys the entire `.ai.soc` repository (including `.git/`, `.github/`, `.gitign
 
 ## I1 — Clone mode
 
-1. `bash scripts/deploy-repo.sh clone "<resolved-path>"`
+1. `bash scripts/soc-deploy-repo.sh clone "<resolved-path>"`
 2. Requires git remote `origin` on source repo.
 3. Target must not exist or must be empty.
 4. Full `git clone` preserves all branches and tags.
@@ -59,7 +59,7 @@ Deploys the entire `.ai.soc` repository (including `.git/`, `.github/`, `.gitign
 
 ## I2 — Archive mode
 
-1. `bash scripts/deploy-repo.sh archive "<resolved-path>"`
+1. `bash scripts/soc-deploy-repo.sh archive "<resolved-path>"`
 2. Uses `git archive HEAD` — no remote required.
 3. Includes `.github/`, `.gitignore`, `.cursorrules` (everything except `.git` directory).
 4. Idempotent — re-runs safely overwrite files.
@@ -81,8 +81,8 @@ Deploys the entire `.ai.soc` repository (including `.git/`, `.github/`, `.gitign
 ## Next commands (in target project)
 
 ```text
-@deploy-basic
-@session-soc start
+@soc-deploy-basic
+@soc-session start
 ```
 
 **OpenCode:** Security OS does not ship `opencode.json`. When co-installed with Agent OS, skills are registered in the parent `.ai/opencode.json`.

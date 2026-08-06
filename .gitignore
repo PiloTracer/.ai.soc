@@ -86,3 +86,6 @@ Thumbs.db
 schema.graphql
 
 .opencode/
+
+# Local agent-tooling permission allowlist (session residue, not repo content)
+reasonix.toml

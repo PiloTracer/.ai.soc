@@ -1,10 +1,10 @@
 # Session lifecycle (.ai.soc)
 
 ```text
-@session-soc start              ← load HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC
-@session-soc context            ← read-only full context (no HANDOFF write)
-@session-soc status             ← compact snapshot
-@session-soc close              ← refresh HANDOFF_SOC + NEXT_SOC
-@session-soc close commit       ← add + commit
-@session-soc close commit push  ← add + commit + push
+@soc-session start              ← load HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC
+@soc-session context            ← read-only full context (no HANDOFF write)
+@soc-session status             ← compact snapshot
+@soc-session close              ← refresh HANDOFF_SOC + NEXT_SOC
+@soc-session close commit       ← add + commit
+@soc-session close commit push  ← add + commit + push
 ```

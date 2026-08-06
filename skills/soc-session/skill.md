@@ -1,15 +1,17 @@
 ---
-name: session-soc
+name: soc-session
 description: >-
   SOC session bookend. Open/close/status/context. Updates HANDOFF_SOC,
-  NEXT_SOC, UNKNOWNS_SOC. Optional git commit.
-  context loads all mandatory context read-only and is uncommitted-aware
-  (surfaces dirty-tree status without writing HANDOFF). Use when the user says
-  session-soc start, session-soc close, session-soc status, or
-  session-soc context.
+  NEXT_SOC, UNKNOWNS_SOC. Optional git commit scoped to the target repo's
+  .work.soc/ working tree — commit includes new untracked files/dirs there
+  and never touches paths outside .work.soc/. context loads all mandatory
+  context read-only and is uncommitted-aware (surfaces dirty-tree status
+  without writing HANDOFF). Use when the user says soc-session start,
+  soc-session close [commit] [push], soc-session status, or
+  soc-session context.
 ---
 
-# session-soc
+# soc-session
 
 **Purpose:** Lightweight bookend for every SOC assessment session. Start loads context. Close saves state. No over-engineering.
 
@@ -31,23 +33,26 @@ description: >-
 
 | User says | Verb | Git action |
 |-----------|------|------------|
-| `@session-soc start` | start | - |
-| `@session-soc close` | close | draft message only |
-| `@session-soc close commit` | close | commit all safe dirty paths |
-| `@session-soc close commit push` | close | commit then push |
-| `@session-soc status` | status | - |
-| `@session-soc context` | context | - |
+| `@soc-session start` | start | - |
+| `@soc-session close` | close | draft message only |
+| `@soc-session close commit` | close | commit `.work.soc/` changes (incl. new untracked files/dirs) |
+| `@soc-session close commit push` | close | commit `.work.soc/` then push |
+| `@soc-session close push` | close | invalid — `push` requires `commit`; draft message only |
+| `@soc-session status` | status | - |
+| `@soc-session context` | context | - |
 
 **Aliases:** `begin`, `open` → start; `end`, `handoff` → close.
 
 **Git permission scope:** `commit` / `push` modifiers authorize **only that close invocation**. They are never standing permission for later commits or pushes. Absent those modifiers in the **same message**, draft the commit message only — do not run `git commit` or `git push`.
+
+**Git scope (hard limit):** any authorized `commit` is **scoped to `{WORK_SOC_ROOT}`** — the `.work.soc/` working directory in the **target repo**. Never stage or commit paths outside `.work.soc/` (no app code, no `.cursorrules`, no source-tree files); never `git add -A`. Files outside `.work.soc/` may be reported as dirty but are never included in a session commit. The session skill itself only ever writes inside `.work.soc/` (HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC). Note: the `.work.soc/`-only guarantee applies to what the session **stages and commits**; a `git push` transports the entire current branch, so it may also carry commits made outside this session (see I2 step 7).
 
 ---
 
 ## I1 — Start mode
 
 ```
-@session-soc start
+@soc-session start
 ```
 
 1. Read `{HANDOFF_SOC}` into context.
@@ -63,7 +68,7 @@ description: >-
 ## I2 — Close mode
 
 ```
-@session-soc close [commit] [push]
+@soc-session close [commit] [push]
 ```
 
 1. Summarize what was done this session (bullet points).
@@ -75,16 +80,22 @@ description: >-
    - Updated unknowns
 3. Update `{NEXT_SOC}` with revised priorities.
 4. Update `{UNKNOWNS_SOC}` — resolve any that were answered, add new ones.
-5. **If `commit` modifier (this invocation only):** Before staging, scan for secret paths (`.env`, `credentials/`, `*.pem`, `*.key`). If any match → abort commit; report failure. Stage safe paths via explicit `git add` of changed files (not `git add -A`). Commit with message. Show SHA + `git status -sb`.
-6. **If `push` modifier (this invocation only; requires `commit`):** `git push` after successful commit. Do not push unless `push` appears in the **same** close message.
-7. Confirm: *"SOC session closed. HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC updated."*
+5. **Draft the commit message** (always — even without `commit`, so the operator can run it themselves). Scope: only files under `{WORK_SOC_ROOT}` (`.work.soc/` in the target repo). Never propose paths outside `.work.soc/`.
+6. **If `commit` modifier (this invocation only):** commit the `.work.soc/` working tree:
+   a. **Secret scan:** list the files that would be staged under `.work.soc/` (tracked modifications, deletions, and new untracked files/dirs). Scan for secret paths (`.env`, `credentials/`, `*.pem`, `*.key`, `*.p12`, `id_rsa*`, `*token*`, `*secret*`). If any match → **abort commit**; report the matched paths (names only, never content); no git writes.
+   b. **Stage scoped to `.work.soc/`:** `git add .work.soc/` — stages modified, deleted, **and new untracked files/dirs** under `.work.soc/`. Never `git add -A`; never `git add <path outside .work.soc/>`.
+   c. **Verify the staged set:** `git diff --cached --name-only` — every staged path must start with `.work.soc/`. If anything outside appears, unstage it (`git restore --staged <path>`) and report.
+   d. **Commit:** `git commit -m "<message>"`. Show SHA + `git status -sb` (files outside `.work.soc/` remain uncommitted — expected).
+7. **If `push` modifier (this invocation only; requires `commit`):** `git push` after successful commit. Do not push unless `push` appears in the **same** close message. Note: `git push` transports the **entire current branch** — any commits already on the branch (including non-`.work.soc/` work) go with it; the `.work.soc/`-only guarantee covers what this session stages and commits, not what push transports. If the operator needs isolation, the session commit should go on its own branch or the operator should confirm the branch contains only intended commits before pushing.
+   - `close push` **without** `commit` is invalid: report *"`push` requires `commit` in the same message — re-run `close commit push`"* and draft the message only (no git writes).
+8. Confirm: *"SOC session closed. HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC updated. Committed `.work.soc/` → <sha>."* (omit the commit clause when no `commit` modifier was present).
 
 ---
 
 ## I3 — Status mode
 
 ```
-@session-soc status
+@soc-session status
 ```
 
 Read-only snapshot. No file writes.
@@ -106,7 +117,7 @@ Read-only snapshot. No file writes.
 ## I4 — Context mode
 
 ```
-@session-soc context
+@soc-session context
 ```
 
 Read-only full context load. **No** HANDOFF/NEXT/UNKNOWNS writes. Sits between `status` (compact) and `start` (writes HANDOFF). Use when you want full session context for ad-hoc reasoning without opening/closing a session bookend.
@@ -164,7 +175,7 @@ Classify the working tree:
 
 ### No files written
 This mode is read-only: HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC not modified.
-Run @session-soc start to open a session bookend.
+Run @soc-session start to open a session bookend.
 ```
 
 ### Anti-patterns (context)
@@ -183,7 +194,9 @@ Run @session-soc start to open a session bookend.
 | 2 | NEXT_SOC.md has ordered priorities | |
 | 3 | UNKNOWNS_SOC.md tracks open questions | |
 | 4 | Session start was acknowledged | |
-| 5 | Session close wrote state + optional commit | |
+| 5 | Session close wrote state + optional commit (`.work.soc/` only) | |
 | 6 | Context mode: no files written, uncommitted-aware summary produced | |
+| 7 | `commit` (when requested) staged **only** `.work.soc/` paths, including new untracked files/dirs; `git diff --cached --name-only` all start with `.work.soc/` | |
+| 8 | No git writes performed outside `.work.soc/`; `push` never ran without `commit` | |
 
 **Next:** `@soc-director - <target>` or whatever NEXT_SOC.md says first.

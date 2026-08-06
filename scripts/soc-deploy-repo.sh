@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deploy-repo.sh — Full git-based deploy of .ai.soc into a target directory.
+# soc-deploy-repo.sh — Full git-based deploy of .ai.soc into a target directory.
 #
 # Two modes:
 #   clone   — git clone with full history into target dir (requires origin remote)
@@ -11,9 +11,9 @@
 # target exists and needs a partial update.
 #
 # Usage:
-#   bash scripts/deploy-repo.sh --status [target-path]
-#   bash scripts/deploy-repo.sh clone    /absolute/path/to/target
-#   bash scripts/deploy-repo.sh archive  /absolute/path/to/target
+#   bash scripts/soc-deploy-repo.sh --status [target-path]
+#   bash scripts/soc-deploy-repo.sh clone    /absolute/path/to/target
+#   bash scripts/soc-deploy-repo.sh archive  /absolute/path/to/target
 #
 set -euo pipefail
 
@@ -22,7 +22,7 @@ SOC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 if [[ "${1:-}" == "--status" || "${1:-}" == "status" ]]; then
   shift || true
   TARGET="${1:-}"
-  echo "=== deploy-repo status (Security OS) ==="
+  echo "=== soc-deploy-repo status (Security OS) ==="
   echo "  source: $SOC_ROOT"
   REMOTE="$(cd "$SOC_ROOT" && git remote get-url origin 2>/dev/null || true)"
   [[ -n "$REMOTE" ]] && echo "  origin: $REMOTE (clone available)" || echo "  origin: none (use archive mode)"
@@ -55,7 +55,7 @@ if [[ ! -d "$PARENT" ]]; then
   exit 1
 fi
 
-echo "=== deploy-repo: $MODE → $DEST_DIR ==="
+echo "=== soc-deploy-repo: $MODE → $DEST_DIR ==="
 
 # Mode: clone
 if [[ "$MODE" == "clone" ]]; then

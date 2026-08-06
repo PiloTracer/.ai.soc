@@ -75,4 +75,4 @@ All changes adapted to `.ai.soc`'s domain:
 - Work tree paths use `.work.soc/` prefix
 - Commit refs use `SOC-` prefix
 - Scripts are standalone (no dependency on `.ai/` scripts)
-- SKILL_DEPENDENCIES.md references only the 6 SOC OS skills (deploy-basic, deploy-files, deploy-repo, session-soc, soc-director, soc-gateway)
+- SKILL_DEPENDENCIES.md references only the 6 SOC OS skills (soc-deploy-basic, soc-deploy-files, soc-deploy-repo, soc-session, soc-director, soc-gateway)

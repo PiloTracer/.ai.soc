@@ -6,7 +6,7 @@ SOC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TPL="${SOC_ROOT}/templates/work"
 
 # Repo root: git root containing .ai.soc/.
-# Honor explicit REPO_ROOT override so deploy-basic can scaffold into a TARGET
+# Honor explicit REPO_ROOT override so soc-deploy-basic can scaffold into a TARGET
 # directory when bootstrap.sh is invoked from an external source .ai.soc.
 #   REPO_ROOT=/mnt/work/Projects/tools-project bash /mnt/work/Projects/.ai.soc/templates/bootstrap.sh
 if [[ -n "${REPO_ROOT:-}" ]]; then
@@ -55,6 +55,6 @@ echo ""
 echo "Next steps:"
 echo "  1. Edit .work.soc/context/HANDOFF_SOC.md with your session state"
 echo "  2. Edit .work.soc/plans/NEXT_SOC.md with your iteration plan"
-  echo "  3. Run @session-soc start or @soc-director - <target>"
+  echo "  3. Run @soc-session start or @soc-director - <target>"
 echo ""
 echo "Templates: ${SOC_ROOT}/templates/work/"

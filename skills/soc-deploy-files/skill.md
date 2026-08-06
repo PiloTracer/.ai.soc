@@ -1,5 +1,5 @@
 ---
-name: deploy-files
+name: soc-deploy-files
 description: >-
   Deploy .ai.soc (Security OS) files into a target project. Two directions:
   (1) in-place bootstrap — invoked from a TARGET project, copies the source
@@ -9,24 +9,24 @@ description: >-
   rules-aware merge of existing-but-differing files (append new rules, update
   shared sections, preserve target customizations; never wholesale-replace).
   Copies only git-tracked / non-ignored files (anything in .gitignore is never
-  copied). Use deploy-files (default), deploy-files update, deploy-files copy
-  - <path>, deploy-files status.
+  copied). Use soc-deploy-files (default), soc-deploy-files update, soc-deploy-files copy
+  - <path>, soc-deploy-files status.
 ---
 
-# deploy-files
+# soc-deploy-files
 
 Two-direction deploy of the `.ai.soc` framework into a target project so the project can use Security OS skills. **Default = no-overwrite**: existing target files are preserved by construction.
 
-**Shell:** `bash <source>/scripts/deploy-files.sh <target-path> [mode]`
+**Shell:** `bash <source>/scripts/soc-deploy-files.sh <target-path> [mode]`
 **Scaffold shell:** `REPO_ROOT=<target> bash <source>/templates/bootstrap.sh`
 
-**Canonical path:** `.ai.soc/skills/deploy-files/skill.md` · **Shell:** `.ai.soc/scripts/deploy-files.sh`
+**Canonical path:** `.ai.soc/skills/soc-deploy-files/skill.md` · **Shell:** `.ai.soc/scripts/soc-deploy-files.sh`
 
 **Security invariant:** The script enumerates files via `git ls-files --cached --others --exclude-standard` from the **source** `.ai.soc` repo root, so anything `.gitignore` excludes (credentials, private context, `tmp/`, …) is never copied — enforced by construction, not a hand-maintained list. The source must be a git repo with `.ai.soc/` as its root.
 
-**Source not modified.** deploy-files only writes to the **target**. The source `.ai.soc` is read-only.
+**Source not modified.** soc-deploy-files only writes to the **target**. The source `.ai.soc` is read-only.
 
-**Contrast with `deploy-repo`:** `deploy-files` copies only the `.ai.soc/` directory (no VCS artifacts). Use `@deploy-repo clone` when you need the full repo including `.git` and `.github/`.
+**Contrast with `soc-deploy-repo`:** `soc-deploy-files` copies only the `.ai.soc/` directory (no VCS artifacts). Use `@soc-deploy-repo clone` when you need the full repo including `.git` and `.github/`.
 
 ---
 
@@ -34,13 +34,13 @@ Two-direction deploy of the `.ai.soc` framework into a target project so the pro
 
 | User says | Direction | Mode |
 |-----------|-----------|------|
-| `@deploy-files` | in-place (cwd is target) | copy no-overwrite + scaffold no-overwrite |
-| `@deploy-files update` | in-place | copy no-overwrite + scaffold no-overwrite + **rules-aware merge** of differing existing files |
-| `@deploy-files copy - /path/to/repo` | outbound (source = this repo) | copy no-overwrite to `/path/to/repo/.ai.soc` |
-| `@deploy-files copy - /path/to/repo --force` | outbound | copy with idempotent overwrite (legacy) |
-| `@deploy-files status` | report | report whether `.ai.soc/` exists at known deploy locations |
+| `@soc-deploy-files` | in-place (cwd is target) | copy no-overwrite + scaffold no-overwrite |
+| `@soc-deploy-files update` | in-place | copy no-overwrite + scaffold no-overwrite + **rules-aware merge** of differing existing files |
+| `@soc-deploy-files copy - /path/to/repo` | outbound (source = this repo) | copy no-overwrite to `/path/to/repo/.ai.soc` |
+| `@soc-deploy-files copy - /path/to/repo --force` | outbound | copy with idempotent overwrite (legacy) |
+| `@soc-deploy-files status` | report | report whether `.ai.soc/` exists at known deploy locations |
 
-**Default:** `status` if no verb matches. **Aliases:** `bootstrap`, `fat` → bare `@deploy-files`.
+**Default:** `status` if no verb matches. **Aliases:** `bootstrap`, `fat` → bare `@soc-deploy-files`.
 
 ---
 
@@ -48,7 +48,7 @@ Two-direction deploy of the `.ai.soc` framework into a target project so the pro
 
 | Condition | Action |
 |-----------|--------|
-| Source is not a git repo, or `.ai.soc/` is not the git root | **Block**: report; deploy-files relies on `git ls-files` as the authority |
+| Source is not a git repo, or `.ai.soc/` is not the git root | **Block**: report; soc-deploy-files relies on `git ls-files` as the authority |
 | Target parent dir does not exist | **Block**: report missing path |
 | Destination exists and is not a dir | **Block**: report conflict |
 | Destination already has `.ai.soc/` | Proceed with **no-overwrite**; report skipped count (default) |
@@ -56,40 +56,40 @@ Two-direction deploy of the `.ai.soc` framework into a target project so the pro
 
 ### Source resolution (in-place direction)
 
-When invoked from a **target** project (cwd has no `.ai.soc/scripts/deploy-files.sh`):
+When invoked from a **target** project (cwd has no `.ai.soc/scripts/soc-deploy-files.sh`):
 
 1. **Auto:** if the script can be located at a known source path (user named it, or the `SOC_SOURCE` env), use it.
 2. **Ask once:** if source is unknown, ask the user for the source `.ai.soc` path (e.g. `/mnt/work/Projects/.ai.soc`). Do not guess.
 3. Source determined → run the shell from the **target** directory:
    ```bash
-   cd <target> && bash <source>/scripts/deploy-files.sh . <mode>
+   cd <target> && bash <source>/scripts/soc-deploy-files.sh . <mode>
    ```
 
 ---
 
 ## I1 — Copy mode (no-overwrite by default)
 
-1. `bash <source>/scripts/deploy-files.sh "<resolved-target>"` (default) — or `--force` / `--update`.
+1. `bash <source>/scripts/soc-deploy-files.sh "<resolved-target>"` (default) — or `--force` / `--update`.
 2. **File set:** `git ls-files --cached --others --exclude-standard` from the source repo root.
-3. **Skill-level omissions:** `.github/`, `.gitignore`, `.gitattributes`, `.cursorrules`, `scripts/deploy-*.sh`.
+3. **Skill-level omissions:** `.github/`, `.gitignore`, `.gitattributes`, `.cursorrules`, `scripts/soc-deploy-*.sh`.
 4. **No-overwrite default:** `rsync --ignore-existing` skips any file already present in the target.
 
 ---
 
 ## I2 — Scaffold (in-place direction only)
 
-When invoked in-place (bare `@deploy-files` or `@deploy-files update`), after the copy pass the script **automatically chains**:
+When invoked in-place (bare `@soc-deploy-files` or `@soc-deploy-files update`), after the copy pass the script **automatically chains**:
 
 1. `.work.soc/` scaffold via `REPO_ROOT=<target> bash <source>/templates/bootstrap.sh`
-2. SOC block in `.cursorrules` via `bash <source>/scripts/deploy-basic.sh <target>`
+2. SOC block in `.cursorrules` via `bash <source>/scripts/soc-deploy-basic.sh <target>`
 
-No separate `@deploy-basic` invocation is required after in-place `@deploy-files`.
+No separate `@soc-deploy-basic` invocation is required after in-place `@soc-deploy-files`.
 
-**Outbound `copy - <path>` does NOT scaffold** — run `@deploy-basic` in the target after copy.
+**Outbound `copy - <path>` does NOT scaffold** — run `@soc-deploy-basic` in the target after copy.
 
 ---
 
-## I3 — update-merge protocol (`@deploy-files update` only)
+## I3 — update-merge protocol (`@soc-deploy-files update` only)
 
 After I1 (no-overwrite copy) the script prints a **merge candidate list**: every file present in both source and target whose content differs. The agent then performs a **rules-aware merge** for each candidate.
 
@@ -133,5 +133,5 @@ After I1 (no-overwrite copy) the script prints a **merge candidate list**: every
 ## Next commands (in target project)
 
 ```text
-@session-soc start
+@soc-session start
 ```

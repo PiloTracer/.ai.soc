@@ -26,6 +26,7 @@ if [[ -f "$SCOPE_FILE" ]]; then
         # Strip leading "#", surrounding whitespace, and the env-name
         # prefix; whatever's left should be the integer.
         val="${line#\#}"
+        val="${val#"${val%%[![:space:]]*}"}"   # trim leading whitespace after "#"
         val="${val#BLAST_RADIUS_MAX_AREAS:}"
         val="${val// /}"
         if [[ "$val" =~ ^[0-9]+$ ]] && [[ "$val" -ge 1 ]]; then

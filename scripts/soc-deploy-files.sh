@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deploy-files.sh — Deploy .ai.soc files into a target project.
+# soc-deploy-files.sh — Deploy .ai.soc files into a target project.
 #
 # Copies ONLY files git considers (tracked + untracked-not-ignored): anything
 # in .gitignore — credentials, private context, tmp/ — is never deployed.
@@ -16,14 +16,14 @@
 #
 # Source resolution: SOC_ROOT is derived from this script's location, so the
 # script can be invoked from a TARGET directory using an external source .ai.soc:
-#   bash /mnt/work/Projects/.ai.soc/scripts/deploy-files.sh .
+#   bash /mnt/work/Projects/.ai.soc/scripts/soc-deploy-files.sh .
 # Override the source with SOC_SOURCE=/abs/path/.ai.soc if needed.
 #
 # Usage:
-#   bash scripts/deploy-files.sh <target-path>              # no-overwrite (skip existing)
-#   bash scripts/deploy-files.sh <target-path> --force      # overwrite existing (legacy)
-#   bash scripts/deploy-files.sh <target-path> --update     # no-overwrite + emit merge candidates
-#   SOC_SOURCE=/path/.ai.soc bash scripts/deploy-files.sh <target-path>
+#   bash scripts/soc-deploy-files.sh <target-path>              # no-overwrite (skip existing)
+#   bash scripts/soc-deploy-files.sh <target-path> --force      # overwrite existing (legacy)
+#   bash scripts/soc-deploy-files.sh <target-path> --update     # no-overwrite + emit merge candidates
+#   SOC_SOURCE=/path/.ai.soc bash scripts/soc-deploy-files.sh <target-path>
 #
 set -euo pipefail
 
@@ -67,18 +67,18 @@ fi
 # Source must be a git repo so the tracked/not-ignored set is authoritative.
 if ! (cd "$SOC_ROOT" && git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
   echo "ERROR: source $SOC_ROOT is not a git repo." >&2
-  echo "  deploy-files copies only git-tracked / non-ignored files (never .gitignored content)." >&2
+  echo "  soc-deploy-files copies only git-tracked / non-ignored files (never .gitignored content)." >&2
   exit 1
 fi
 
 GIT_TOP="$(cd "$SOC_ROOT" && git rev-parse --show-toplevel)"
 if [[ "$GIT_TOP" != "$SOC_ROOT" ]]; then
   echo "ERROR: $SOC_ROOT is not the git repo root (root is $GIT_TOP)." >&2
-  echo "  deploy-files expects the .ai.soc directory to be the repository root." >&2
+  echo "  soc-deploy-files expects the .ai.soc directory to be the repository root." >&2
   exit 1
 fi
 
-echo "=== deploy-files → $DEST_DIR ==="
+echo "=== soc-deploy-files → $DEST_DIR ==="
 echo "  source: $SOC_ROOT"
 echo "  mode:   $MODE (no-overwrite by default)"
 if [[ -d "$DEST_DIR" ]]; then
@@ -86,7 +86,7 @@ if [[ -d "$DEST_DIR" ]]; then
 fi
 
 # Build copy list: files git sees (tracked + untracked-not-ignored).
-SKILL_EXCLUDE_REGEX='^(\.github/|\.gitignore$|\.gitattributes$|\.cursorrules$|scripts/deploy-files\.sh$|scripts/deploy-basic\.sh$|scripts/deploy-repo\.sh$)'
+SKILL_EXCLUDE_REGEX='^(\.github/|\.gitignore$|\.gitattributes$|\.cursorrules$|scripts/soc-deploy-files\.sh$|scripts/soc-deploy-basic\.sh$|scripts/soc-deploy-repo\.sh$)'
 
 TMP_LIST="$(mktemp)"
 MERGE_CANDS="$(mktemp)"
@@ -133,7 +133,7 @@ if [[ "$MODE" == "update" ]] && [[ -s "$MERGE_CANDS" ]]; then
     echo "  merge: $rel"
   done < "$MERGE_CANDS"
   echo "  (agent performs rules-aware merge — append new sections, preserve target"
-  echo "   customizations. See skill deploy-basic/skill.md § update-merge.)"
+  echo "   customizations. See skill soc-deploy-basic/skill.md § update-merge.)"
 fi
 
 echo ""
@@ -142,18 +142,18 @@ echo ""
 
 if [[ "$RAW_TARGET" == "." || "$RAW_TARGET" == "$PWD" ]]; then
   REPO_ROOT="$(cd "$PARENT" && pwd)"
-  SOC_SOURCE="$SOC_ROOT" bash "$SOC_ROOT/scripts/deploy-basic.sh" . \
-    > /tmp/deploy-files-soc-basic.$$.log 2>&1 || { cat /tmp/deploy-files-soc-basic.$$.log; rm -f /tmp/deploy-files-soc-basic.$$.log; exit 1; }
-  grep -E '(===|cursorrules:|work:|SOC block|Done:)' /tmp/deploy-files-soc-basic.$$.log | sed 's/^/  scaffold: /' || true
-  rm -f /tmp/deploy-files-soc-basic.$$.log
+  SOC_SOURCE="$SOC_ROOT" bash "$SOC_ROOT/scripts/soc-deploy-basic.sh" . \
+    > /tmp/soc-deploy-files-scaffold.$$.log 2>&1 || { cat /tmp/soc-deploy-files-scaffold.$$.log; rm -f /tmp/soc-deploy-files-scaffold.$$.log; exit 1; }
+  grep -E '(===|cursorrules:|work:|SOC block|Done:)' /tmp/soc-deploy-files-scaffold.$$.log | sed 's/^/  scaffold: /' || true
+  rm -f /tmp/soc-deploy-files-scaffold.$$.log
   SCAFFOLD_DONE=1
 fi
 
 if [[ -n "${SCAFFOLD_DONE:-}" ]]; then
-  echo "  Scaffold: .work.soc/ + SOC block in .cursorrules (via deploy-basic)"
-  echo "  Next: @session-soc start"
+  echo "  Scaffold: .work.soc/ + SOC block in .cursorrules (via soc-deploy-basic)"
+  echo "  Next: @soc-session start"
 else
   echo "Next steps in target project:"
-  echo "  1. Run @deploy-basic or append SOC block to .cursorrules"
-  echo "  2. Run @session-soc start"
+  echo "  1. Run @soc-deploy-basic or append SOC block to .cursorrules"
+  echo "  2. Run @soc-session start"
 fi

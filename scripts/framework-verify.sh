@@ -22,7 +22,7 @@ git rev-parse --is-inside-work-tree &>/dev/null && ok "inside git work tree" || 
 
 note "Core framework files"
 for f in README.md START_HERE.md templates/bootstrap.sh \
-  scripts/deploy-basic.sh scripts/deploy-files.sh scripts/deploy-repo.sh \
+  scripts/soc-deploy-basic.sh scripts/soc-deploy-files.sh scripts/soc-deploy-repo.sh \
   skills/README.md; do
   [[ -f "$SOC_ROOT/$f" ]] && ok "$f" || die "missing $f"
 done
@@ -47,27 +47,27 @@ for check in touch-scope-verify blast-radius-check gate-verify; do
   fi
 done
 
-note "deploy-files in-place scaffold"
+note "soc-deploy-files in-place scaffold"
 DF_SMOKE="$(mktemp -d)"
 pushd "$DF_SMOKE" >/dev/null
-bash "$SOC_ROOT/scripts/deploy-files.sh" . >/dev/null
-[[ -d .ai.soc/skills ]] || die "deploy-files in-place missing .ai.soc/skills"
-[[ -f .work.soc/context/HANDOFF_SOC.md ]] || die "deploy-files in-place missing .work.soc/context/HANDOFF_SOC.md"
-grep -q 'SOC_DESIGN_OS_BEGIN' .cursorrules 2>/dev/null || die "deploy-files in-place missing SOC block in .cursorrules"
+bash "$SOC_ROOT/scripts/soc-deploy-files.sh" . >/dev/null
+[[ -d .ai.soc/skills ]] || die "soc-deploy-files in-place missing .ai.soc/skills"
+[[ -f .work.soc/context/HANDOFF_SOC.md ]] || die "soc-deploy-files in-place missing .work.soc/context/HANDOFF_SOC.md"
+grep -q 'SOC_DESIGN_OS_BEGIN' .cursorrules 2>/dev/null || die "soc-deploy-files in-place missing SOC block in .cursorrules"
 popd >/dev/null
-ok "deploy-files in-place creates .ai.soc/ + .work.soc/ + SOC block"
+ok "soc-deploy-files in-place creates .ai.soc/ + .work.soc/ + SOC block"
 
-note "deploy-repo --status"
-bash "$SOC_ROOT/scripts/deploy-repo.sh" --status >/dev/null
-bash "$SOC_ROOT/scripts/deploy-repo.sh" --status "$DF_SMOKE" >/dev/null
-ok "deploy-repo --status reports source + target"
+note "soc-deploy-repo --status"
+bash "$SOC_ROOT/scripts/soc-deploy-repo.sh" --status >/dev/null
+bash "$SOC_ROOT/scripts/soc-deploy-repo.sh" --status "$DF_SMOKE" >/dev/null
+ok "soc-deploy-repo --status reports source + target"
 rm -rf "$DF_SMOKE"
 
-note "deploy-basic thin-client scaffold"
+note "soc-deploy-basic thin-client scaffold"
 DB_SMOKE="$(mktemp -d)"
-bash "$SOC_ROOT/scripts/deploy-basic.sh" "$DB_SMOKE" >/dev/null
-grep -q 'SOC_DESIGN_OS_BEGIN' "${DB_SMOKE}/.cursorrules" && ok "deploy-basic appends SOC block" || die "deploy-basic SOC block missing"
-[[ -d "${DB_SMOKE}/.work.soc" ]] && ok "deploy-basic creates .work.soc/" || die "deploy-basic .work.soc missing"
+bash "$SOC_ROOT/scripts/soc-deploy-basic.sh" "$DB_SMOKE" >/dev/null
+grep -q 'SOC_DESIGN_OS_BEGIN' "${DB_SMOKE}/.cursorrules" && ok "soc-deploy-basic appends SOC block" || die "soc-deploy-basic SOC block missing"
+[[ -d "${DB_SMOKE}/.work.soc" ]] && ok "soc-deploy-basic creates .work.soc/" || die "soc-deploy-basic .work.soc missing"
 rm -rf "$DB_SMOKE"
 
 echo ""

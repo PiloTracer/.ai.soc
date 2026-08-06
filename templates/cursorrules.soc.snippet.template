@@ -33,14 +33,14 @@ The agent MUST resolve `.ai.soc/` references from `$SOC_SOURCE` (thin-client mod
 
 | Skill | Purpose |
 |-------|---------|
-| deploy-basic | Bootstrap `.work.soc/` + SOC source pointer (thin-client) |
-| deploy-files | Copy `.ai.soc/` files into target (fat-client) |
-| deploy-repo | Clone or archive the full `.ai.soc` repo |
-| session-soc | SOC session bookend; start/close/status/context |
+| soc-deploy-basic | Bootstrap `.work.soc/` + SOC source pointer (thin-client) |
+| soc-deploy-files | Copy `.ai.soc/` files into target (fat-client) |
+| soc-deploy-repo | Clone or archive the full `.ai.soc` repo |
+| soc-session | SOC session bookend; start/close/status/context |
 | soc-director | Run penetration tests against targets |
 | soc-gateway | Run .ai.soc from source without system install |
 
-**Sessions:** `@session-soc` — opens and closes SOC sessions
+**Sessions:** `@soc-session` — opens and closes SOC sessions
 
 ### Data Loss Prevention (SOC deploy invariant)
 

@@ -1,30 +1,30 @@
 ---
-name: deploy-basic
+name: soc-deploy-basic
 description: >-
   Thin-client bootstrap of .ai.soc into a target project. Copies ONLY the
   minimal scaffold — .cursorrules SOC block (with SOC_SOURCE pointer to the
   source .ai.soc), .work.soc/ skeleton (HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC,
   README, analysis, dirs). Framework assets (skills, standards, concepts,
   scripts, templates) are NOT copied; the agent resolves them from the source
-  .ai.soc at runtime per SOC_SOURCE pointer. Use deploy-basic (default),
-  deploy-basic update, deploy-basic status, or deploy-basic - source <path>
-  / deploy-basic - target <path>. Never modifies the source.
-  Contrast with deploy-files (full fat-client copy of .ai.soc/).
+  .ai.soc at runtime per SOC_SOURCE pointer. Use soc-deploy-basic (default),
+  soc-deploy-basic update, soc-deploy-basic status, or soc-deploy-basic - source <path>
+  / soc-deploy-basic - target <path>. Never modifies the source.
+  Contrast with soc-deploy-files (full fat-client copy of .ai.soc/).
 ---
 
-# deploy-basic
+# soc-deploy-basic
 
 Thin-client deploy of the `.ai.soc` framework. The target project receives only the scaffold it owns (`.cursorrules` SOC block, `.work.soc/`); everything else (skills, standards, concepts, scripts, templates) stays in the **source** `.ai.soc` and is loaded on demand via the `SOC_SOURCE` pointer written into `.cursorrules`.
 
-**Shell:** `bash <source>/scripts/deploy-basic.sh <target-path> [mode]`
+**Shell:** `bash <source>/scripts/soc-deploy-basic.sh <target-path> [mode]`
 
-**Canonical path:** `.ai.soc/skills/deploy-basic/skill.md` · **Shell:** `.ai.soc/scripts/deploy-basic.sh`
+**Canonical path:** `.ai.soc/skills/soc-deploy-basic/skill.md` · **Shell:** `.ai.soc/scripts/soc-deploy-basic.sh`
 
-**Source not modified.** deploy-basic only writes to the **target**. The source `.ai.soc` is read-only.
+**Source not modified.** soc-deploy-basic only writes to the **target**. The source `.ai.soc` is read-only.
 
-**Contrast with `deploy-files`:** `deploy-files` = **fat-client** (vendored full `.ai.soc/` into target, skills are local). `deploy-basic` = **thin-client** (skills remote in source). Choose:
-- `deploy-files` — you want skills/standards/concepts versioned inside the project, offline-editable, no external dependency.
-- `deploy-basic` — you want the project to track the live source framework, share one source of truth across many consumer repos.
+**Contrast with `soc-deploy-files`:** `soc-deploy-files` = **fat-client** (vendored full `.ai.soc/` into target, skills are local). `soc-deploy-basic` = **thin-client** (skills remote in source). Choose:
+- `soc-deploy-files` — you want skills/standards/concepts versioned inside the project, offline-editable, no external dependency.
+- `soc-deploy-basic` — you want the project to track the live source framework, share one source of truth across many consumer repos.
 
 ---
 
@@ -32,8 +32,8 @@ Thin-client deploy of the `.ai.soc` framework. The target project receives only 
 
 | # | User location | Source | Target | Invocation |
 |---|---------------|--------|--------|------------|
-| 1 | Target project (e.g. `/mnt/work/Projects/tools-project`) | Explicit source path | `cwd` | `@deploy-basic - source /mnt/work/Projects/.ai.soc` |
-| 2 | Source `.ai.soc` directory | `cwd` (implied) | Explicit target path | `@deploy-basic - target /mnt/work/Projects/tools-project` |
+| 1 | Target project (e.g. `/mnt/work/Projects/tools-project`) | Explicit source path | `cwd` | `@soc-deploy-basic - source /mnt/work/Projects/.ai.soc` |
+| 2 | Source `.ai.soc` directory | `cwd` (implied) | Explicit target path | `@soc-deploy-basic - target /mnt/work/Projects/tools-project` |
 
 In both scenarios, the source `.ai.soc` is never modified. Only the target receives changes.
 
@@ -43,11 +43,11 @@ In both scenarios, the source `.ai.soc` is never modified. Only the target recei
 
 | User says | Direction | Mode |
 |-----------|-----------|------|
-| `@deploy-basic` | auto-detect | bootstrap (no-overwrite); if SOC_SOURCE already in .cursorrules → re-run in-place |
-| `@deploy-basic - source /path/to/.ai.soc` | in-place (cwd is target) | bootstrap from explicit source |
-| `@deploy-basic - target /path/to/project` | outbound (cwd is source) | bootstrap into explicit target |
-| `@deploy-basic update` | in-place | no-overwrite + re-sync source pointer + agent merge candidates |
-| `@deploy-basic status` | report | read-only: SOC block presence, source reachability, .work.soc/ structure |
+| `@soc-deploy-basic` | auto-detect | bootstrap (no-overwrite); if SOC_SOURCE already in .cursorrules → re-run in-place |
+| `@soc-deploy-basic - source /path/to/.ai.soc` | in-place (cwd is target) | bootstrap from explicit source |
+| `@soc-deploy-basic - target /path/to/project` | outbound (cwd is source) | bootstrap into explicit target |
+| `@soc-deploy-basic update` | in-place | no-overwrite + re-sync source pointer + agent merge candidates |
+| `@soc-deploy-basic status` | report | read-only: SOC block presence, source reachability, .work.soc/ structure |
 
 **Default:** `status` if no verb matches.
 
@@ -94,7 +94,7 @@ In both scenarios, the source `.ai.soc` is never modified. Only the target recei
 
 ---
 
-## I2 — update-merge protocol (`@deploy-basic update` only)
+## I2 — update-merge protocol (`@soc-deploy-basic update` only)
 
 After I1 (no-overwrite) the skill:
 
@@ -150,7 +150,7 @@ Reports:
 test -d "$(grep -oE 'SOC_SOURCE=[^ ]*' .cursorrules | head -1 | cut -d= -f2-)"
 
 # First SOC skill invocation — loads from source:
-@session-soc start
+@soc-session start
 ```
 
 ---
@@ -159,7 +159,7 @@ test -d "$(grep -oE 'SOC_SOURCE=[^ ]*' .cursorrules | head -1 | cut -d= -f2-)"
 
 | When | Ask / do |
 |------|----------|
-| Invoked from target with no source pointer yet | Chicken-and-egg escape: invoke the shell directly: `bash /abs/path/to/source/scripts/deploy-basic.sh .` |
+| Invoked from target with no source pointer yet | Chicken-and-egg escape: invoke the shell directly: `bash /abs/path/to/source/scripts/soc-deploy-basic.sh .` |
 | Bootstrap target already has `.ai.soc/skills/` (fat-client) | Warn; ask: convert to thin (delete local `.ai.soc/`)?, keep mixed?, or abort? |
 | `update` finds `.cursorrules` with no `SOC_SOURCE` line | Flag as merge candidate; agent appends the SOC block with current source value. |
 | Source moved since last bootstrap | `update` re-syncs the pointer in-place; report old→new. If source unreachable, stop. |
@@ -168,9 +168,9 @@ test -d "$(grep -oE 'SOC_SOURCE=[^ ]*' .cursorrules | head -1 | cut -d= -f2-)"
 
 ## Anti-patterns
 
-- Copying `skills/`/`standards/`/`concepts/` into the target (defeats thin-client; use `@deploy-files`).
+- Copying `skills/`/`standards/`/`concepts/` into the target (defeats thin-client; use `@soc-deploy-files`).
 - Wholesale-replacing `.cursorrules` or `.work.soc/` files on `update`.
 - Resetting `SOC_SOURCE` to `REPLACE_SOCSOURCE` instead of the resolved path.
-- Running `@deploy-basic` and expecting skills to work offline — thin-client requires the source path to remain reachable.
-- Invoking `@deploy-basic - target /path` from the source dir **without** a target path.
+- Running `@soc-deploy-basic` and expecting skills to work offline — thin-client requires the source path to remain reachable.
+- Invoking `@soc-deploy-basic - target /path` from the source dir **without** a target path.
 - Modifying the source `.ai.soc/` during deploy.

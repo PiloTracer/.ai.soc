@@ -18,15 +18,15 @@
 │  Where am I right now?                    │
 └──────────────────────────────────────────┘
        │
-       ├── "Bootstrap / empty .work.soc"    ──► @deploy-basic update
+       ├── "Bootstrap / empty .work.soc"    ──► @soc-deploy-basic update
        │
-       ├── "I just opened the project / lost"   ──► @session-soc context
+       ├── "I just opened the project / lost"   ──► @soc-session context
        │
-       ├── "Where am I / what's next?"         ──► @session-soc status
+       ├── "Where am I / what's next?"         ──► @soc-session status
        │
-       ├── "Start a SOC session"               ──► @session-soc start
+       ├── "Start a SOC session"               ──► @soc-session start
        │
-       ├── "Close SOC session"                 ──► @session-soc close [commit] [push]
+       ├── "Close SOC session"                 ──► @soc-session close [commit] [push]
        │
        ├── "Run a security assessment"         ──► @soc-director - <target>
        │
@@ -41,11 +41,11 @@
 
 | You need… | From target project | From .ai.soc directory |
 |-----------|-------------------|----------------------|
-| Thin-client (scaffold only) | `@deploy-basic - source /path/to/.ai.soc` | `@deploy-basic - target /path/to/project` |
-| Fat-client (full files) | `@deploy-files - source /path/to/.ai.soc` | `@deploy-files copy - /path/to/project` |
-| Full repo (git/archive) | — | `@deploy-repo clone - /path/to/project` |
-| Update existing | `@deploy-basic update` or `@deploy-files update` | — |
-| Check deploy status | `@deploy-basic status` | `@deploy-files status` |
+| Thin-client (scaffold only) | `@soc-deploy-basic - source /path/to/.ai.soc` | `@soc-deploy-basic - target /path/to/project` |
+| Fat-client (full files) | `@soc-deploy-files - source /path/to/.ai.soc` | `@soc-deploy-files copy - /path/to/project` |
+| Full repo (git/archive) | — | `@soc-deploy-repo clone - /path/to/project` |
+| Update existing | `@soc-deploy-basic update` or `@soc-deploy-files update` | — |
+| Check deploy status | `@soc-deploy-basic status` | `@soc-deploy-files status` |
 
 Source `.ai.soc` is never modified. Only the target receives changes.
 
@@ -55,12 +55,12 @@ Source `.ai.soc` is never modified. Only the target receives changes.
 
 | Action | Command |
 |--------|---------|
-| Load context (read-only) | `@session-soc context` |
-| Open session | `@session-soc start` |
-| Close session | `@session-soc close` |
-| Close + commit | `@session-soc close commit` |
-| Close + commit + push | `@session-soc close commit push` |
-| Status snapshot | `@session-soc status` |
+| Load context (read-only) | `@soc-session context` |
+| Open session | `@soc-session start` |
+| Close session | `@soc-session close` |
+| Close + commit | `@soc-session close commit` |
+| Close + commit + push | `@soc-session close commit push` |
+| Status snapshot | `@soc-session status` |
 | Run SOC tool | `./gateway.sh -t <target>` |
 | Full assessment | `@soc-director - scan <target> [quick\|standard\|deep]` |
 
