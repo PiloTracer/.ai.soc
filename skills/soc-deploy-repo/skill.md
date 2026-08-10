@@ -5,8 +5,11 @@ description: >-
   clone (git clone with full history via origin remote) or archive
   (git archive extract including .github, .gitignore, .cursorrules).
   Use clone for a full git mirror; use archive when no remote is available
-  or when updating an existing target. soc-deploy-repo clone - <path>,
-  soc-deploy-repo archive - <path>, soc-deploy-repo status.
+  or when updating an existing target. Archive deploys end with a verify
+  pass of the deployed tree's .cursorrules. Arguments are normalized: verbs
+  accept an optional `--` prefix and may appear before or after the target
+  path. soc-deploy-repo clone - <path>, soc-deploy-repo archive - <path>,
+  soc-deploy-repo status, soc-deploy-repo verify [path].
 ---
 
 # soc-deploy-repo
@@ -23,13 +26,16 @@ Deploys the entire `.ai.soc` repository (including `.git/`, `.github/`, `.gitign
 
 ## Parse invocation
 
+**Argument normalization:** verbs accept an optional `--` prefix and may appear before or after the target path. `@soc-deploy-repo archive - /path` ≡ shell `soc-deploy-repo.sh /path archive` ≡ `soc-deploy-repo.sh /path --archive` ≡ `soc-deploy-repo.sh --archive /path`.
+
 | User says | Mode |
 |-----------|------|
 | `@soc-deploy-repo clone - /path/to/repo` | Full `git clone` from origin remote to target path |
-| `@soc-deploy-repo archive - /path/to/repo` | `git archive HEAD \| tar xf` — full tree, no `.git` |
-| `@soc-deploy-repo status` | Report source remote, HEAD, optional target deploy state |
+| `@soc-deploy-repo archive - /path/to/repo` | `git archive HEAD \| tar xf` — full tree, no `.git` + verify pass |
+| `@soc-deploy-repo status` (= `--status`) | Report source remote, HEAD, optional target deploy state |
+| `@soc-deploy-repo verify [path]` (= `--verify`) | Read-only audit of target `.cursorrules` + `.work.soc/` (delegates to soc-deploy-basic verify); exit 1 on hard failure |
 
-**Shell (read-only):** `bash scripts/soc-deploy-repo.sh --status [target-path]`
+**Shell (read-only):** `bash scripts/soc-deploy-repo.sh status [target-path]` · `bash scripts/soc-deploy-repo.sh verify [target-path]`
 
 **Default:** `status` if no verb matches.
 
@@ -76,7 +82,8 @@ Deploys the entire `.ai.soc` repository (including `.git/`, `.github/`, `.gitign
 | 2 | Target path exists and is populated | | |
 | 3 | `.git/` present (clone) / `.github/` present (archive) | | |
 | 4 | `.cursorrules` present at target root | | |
-| 5 | User informed of next steps | | |
+| 5 | Verify pass clean (archive: automatic; clone: run `verify` after checkout) | | |
+| 6 | User informed of next steps | | |
 
 ## Next commands (in target project)
 

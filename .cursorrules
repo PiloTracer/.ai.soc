@@ -248,9 +248,9 @@ When deployed as a thin-client (via `@soc-deploy-basic`), the `.cursorrules` car
 
 | Skill | Purpose |
 |-------|---------|
-| soc-deploy-basic | Bootstrap `.work.soc/` + SOC source pointer (thin-client); update/status |
-| soc-deploy-files | Copy `.ai.soc/` files into target (fat-client); update/status |
-| soc-deploy-repo | Clone or archive the full `.ai.soc` repo |
+| soc-deploy-basic | Bootstrap `.work.soc/` + SOC source pointer (thin-client); update/status/verify (args normalized: verb ±`--`, path any position) |
+| soc-deploy-files | Copy `.ai.soc/` files into target (fat-client, self-contained local pointer); update/status |
+| soc-deploy-repo | Clone or archive the full `.ai.soc` repo; status/verify |
 | soc-director | Run penetration tests against targets (local code, URLs, domains) |
 | soc-gateway | Run .ai.soc from source without system install |
 | soc-session | SOC session bookend; start/close/status/context; updates HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC |

@@ -9,8 +9,11 @@ description: >-
   rules-aware merge of existing-but-differing files (append new rules, update
   shared sections, preserve target customizations; never wholesale-replace).
   Copies only git-tracked / non-ignored files (anything in .gitignore is never
-  copied). Use soc-deploy-files (default), soc-deploy-files update, soc-deploy-files copy
-  - <path>, soc-deploy-files status.
+  copied). The in-place scaffold writes SOC_SOURCE pointing at the LOCAL
+  deployed copy (fat-client = self-contained) and ends with a verify pass.
+  Arguments are normalized: verbs accept an optional `--` prefix and may
+  appear before or after the target path. Use soc-deploy-files (default),
+  soc-deploy-files update, soc-deploy-files copy - <path>, soc-deploy-files status.
 ---
 
 # soc-deploy-files
@@ -32,13 +35,15 @@ Two-direction deploy of the `.ai.soc` framework into a target project so the pro
 
 ## Parse invocation
 
+**Argument normalization:** verbs accept an optional `--` prefix, the target path may appear before or after the verb, and quoting the path is optional. `@soc-deploy-files "/path" update` ≡ `@soc-deploy-files /path --update` ≡ `@soc-deploy-files --update /path`.
+
 | User says | Direction | Mode |
 |-----------|-----------|------|
-| `@soc-deploy-files` | in-place (cwd is target) | copy no-overwrite + scaffold no-overwrite |
-| `@soc-deploy-files update` | in-place | copy no-overwrite + scaffold no-overwrite + **rules-aware merge** of differing existing files |
+| `@soc-deploy-files` | in-place (cwd is target) | copy no-overwrite + scaffold no-overwrite + verify |
+| `@soc-deploy-files update` (= `--update`) | in-place | copy no-overwrite + scaffold no-overwrite + **rules-aware merge** of differing existing files + verify |
 | `@soc-deploy-files copy - /path/to/repo` | outbound (source = this repo) | copy no-overwrite to `/path/to/repo/.ai.soc` |
 | `@soc-deploy-files copy - /path/to/repo --force` | outbound | copy with idempotent overwrite (legacy) |
-| `@soc-deploy-files status` | report | report whether `.ai.soc/` exists at known deploy locations |
+| `@soc-deploy-files status` (= `--status`) | report | report whether `.ai.soc/` exists at known deploy locations |
 
 **Default:** `status` if no verb matches. **Aliases:** `bootstrap`, `fat` → bare `@soc-deploy-files`.
 
@@ -71,7 +76,7 @@ When invoked from a **target** project (cwd has no `.ai.soc/scripts/soc-deploy-f
 
 1. `bash <source>/scripts/soc-deploy-files.sh "<resolved-target>"` (default) — or `--force` / `--update`.
 2. **File set:** `git ls-files --cached --others --exclude-standard` from the source repo root.
-3. **Skill-level omissions:** `.github/`, `.gitignore`, `.gitattributes`, `.cursorrules`, `scripts/soc-deploy-*.sh`.
+3. **Skill-level omissions:** `.github/`, `.gitignore`, `.gitattributes`, `.cursorrules`. Deploy scripts (`scripts/soc-deploy-*.sh`) **are** included so the fat-client target can self-verify and self-update via its local copy.
 4. **No-overwrite default:** `rsync --ignore-existing` skips any file already present in the target.
 
 ---
@@ -81,7 +86,7 @@ When invoked from a **target** project (cwd has no `.ai.soc/scripts/soc-deploy-f
 When invoked in-place (bare `@soc-deploy-files` or `@soc-deploy-files update`), after the copy pass the script **automatically chains**:
 
 1. `.work.soc/` scaffold via `REPO_ROOT=<target> bash <source>/templates/bootstrap.sh`
-2. SOC block in `.cursorrules` via `bash <source>/scripts/soc-deploy-basic.sh <target>`
+2. SOC block in `.cursorrules` via `bash <source>/scripts/soc-deploy-basic.sh <target>` — which writes `SOC_SOURCE=<target>/.ai.soc` (the **local** deployed copy, so the fat-client is self-contained) and ends with a **verify pass** of the target (see soc-deploy-basic § I4)
 
 No separate `@soc-deploy-basic` invocation is required after in-place `@soc-deploy-files`.
 
@@ -129,6 +134,7 @@ After I1 (no-overwrite copy) the script prints a **merge candidate list**: every
 | 6 | No-overwrite honored | |
 | 7 | Scaffold ran into target (in-place only) | |
 | 8 | `update`: merge candidate list processed | |
+| 9 | Fat-client `.cursorrules` points `SOC_SOURCE` at the local `.ai.soc`; verify pass clean | |
 
 ## Next commands (in target project)
 

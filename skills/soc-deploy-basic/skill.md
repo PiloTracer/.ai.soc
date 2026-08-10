@@ -10,6 +10,11 @@ description: >-
   soc-deploy-basic update, soc-deploy-basic status, or soc-deploy-basic - source <path>
   / soc-deploy-basic - target <path>. Never modifies the source.
   Contrast with soc-deploy-files (full fat-client copy of .ai.soc/).
+  Every deploy/update ends with a `verify` pass auditing the target's
+  .cursorrules (SOC_SOURCE, stale skill handles, skeleton, sister frameworks).
+  Arguments are normalized: verbs accept an optional `--` prefix and may
+  appear before or after the target path — `soc-deploy-basic /path update`
+  is exactly equivalent to `soc-deploy-basic /path --update`.
 ---
 
 # soc-deploy-basic
@@ -41,13 +46,22 @@ In both scenarios, the source `.ai.soc` is never modified. Only the target recei
 
 ## Parse invocation
 
+**Argument normalization:** verbs accept an optional `--` prefix, the target path may appear before or after the verb, and quoting the path is optional. The following are **exactly equivalent** — parse them to the same shell invocation:
+
+```text
+@soc-deploy-basic "/mnt/work/Projects/system-erp" update
+@soc-deploy-basic /mnt/work/Projects/system-erp --update
+@soc-deploy-basic --update /mnt/work/Projects/system-erp
+```
+
 | User says | Direction | Mode |
 |-----------|-----------|------|
 | `@soc-deploy-basic` | auto-detect | bootstrap (no-overwrite); if SOC_SOURCE already in .cursorrules → re-run in-place |
 | `@soc-deploy-basic - source /path/to/.ai.soc` | in-place (cwd is target) | bootstrap from explicit source |
 | `@soc-deploy-basic - target /path/to/project` | outbound (cwd is source) | bootstrap into explicit target |
-| `@soc-deploy-basic update` | in-place | no-overwrite + re-sync source pointer + agent merge candidates |
-| `@soc-deploy-basic status` | report | read-only: SOC block presence, source reachability, .work.soc/ structure |
+| `@soc-deploy-basic update` (= `--update`) | in-place | no-overwrite + re-sync source pointer + agent merge candidates + verify |
+| `@soc-deploy-basic status` (= `--status`) | report | read-only: SOC block presence, source reachability, .work.soc/ structure |
+| `@soc-deploy-basic verify` (= `--verify`) | audit | read-only audit of target `.cursorrules` + `.work.soc/`; exit 1 on any hard failure |
 
 **Default:** `status` if no verb matches.
 
@@ -86,7 +100,7 @@ In both scenarios, the source `.ai.soc` is never modified. Only the target recei
 
 1. Resolve source `SOC_ROOT` (explicit `- source <path>`, `SOC_SOURCE` env, or script's parent). Validate `templates/cursorrules.soc.snippet.template` exists.
 2. Resolve target = `REPO_ROOT` of the consumer (cwd for in-place, or named path for outbound).
-3. Append SOC block to target `.cursorrules` from the snippet template, substituting `REPLACE_SOCSOURCE` → `SOC_SOURCE=<absolute SOC_ROOT>`. **No-overwrite** if SOC block already present. The block adds the `SOC_SOURCE` pointer line, SOC context table, SOC placeholders, and SOC skills table.
+3. Append SOC block to target `.cursorrules` from the snippet template, substituting `REPLACE_SOCSOURCE` → the intended pointer (`SOC_SOURCE=<absolute SOC_ROOT>` for thin targets; `SOC_SOURCE=<target>/.ai.soc` when the target owns a local skills copy). **No-overwrite** if SOC block already present. The block adds the `SOC_SOURCE` pointer line, SOC context table, SOC placeholders, and SOC skills table.
 4. Run the `.work.soc/` scaffold via `REPO_ROOT=<target> bash <source>/templates/bootstrap.sh` (bootstrap's `copy_if_missing` enforces no-overwrite).
 5. Report: `SOC_SOURCE` pointer value, `.work.soc/` presence, fat-client leak check, next steps.
 
@@ -131,6 +145,27 @@ Reports:
 
 ---
 
+## I4 — verify (read-only audit)
+
+`bash <source>/scripts/soc-deploy-basic.sh verify [target-path]` audits a deployed target. **Every deploy/update run ends with this pass automatically** — a deploy that does not verify exits non-zero.
+
+Hard checks (failure → exit 1):
+
+| Check | Pass condition |
+|-------|----------------|
+| `.cursorrules` + SOC block | File exists; `SOC_DESIGN_OS_BEGIN` marker present |
+| Stale skill handles | No pre-0.5.0 handles (`session-soc`, `deploy-basic/-files/-repo` without `soc-` prefix) |
+| `SOC_SOURCE` pointer | Not the `REPLACE_SOCSOURCE` placeholder. **Thin-client:** set, reachable, `$SOC_SOURCE/skills/README.md` present. **Fat-client** (local `.ai.soc/skills/` exists): unset, or pointing at the local copy |
+| `.work.soc/` skeleton | `context/HANDOFF_SOC.md`, `plans/NEXT_SOC.md`, `plans/UNKNOWNS_SOC.md` present |
+
+Soft checks (reported, never fail): SOC block sections present (`SOC context files`, `SOC placeholders`, `SOC skills`, `Data Loss Prevention`) — missing ones mean an older block, suggest `update`; sister frameworks (`.ai`, `.ai.ui`, `.ai.biz`) under the resolved `WORK_ROOT` — reported as `installed` / `framework not installed here`.
+
+Fat-client pointer rule: when the target owns local skills, `SOC_SOURCE` must be unset or equal `<target>/.ai.soc` so the deployment is self-contained. `update` re-syncs a stale pointer to the intended value (local copy for fat targets, source path for thin targets).
+
+Use verify after any deploy/update, after moving the source `.ai.soc`, and whenever an operator asks "read .cursorrules" in a target project — it confirms the block is coherent before any SOC work starts.
+
+---
+
 ## Completion
 
 | # | Check | Result |
@@ -142,6 +177,7 @@ Reports:
 | 5 | `update`: source pointer re-synced if stale; merge candidate list produced | |
 | 6 | Fat-client leak checked | |
 | 7 | User informed that skills load from `$SOC_SOURCE` at runtime | |
+| 8 | `verify` pass ran at end of deploy/update; zero hard failures | |
 
 ## Next commands (in target project)
 

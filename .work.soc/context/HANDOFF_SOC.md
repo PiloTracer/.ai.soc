@@ -1,5 +1,62 @@
 # HANDOFF_SOC — Security OS session state
 
+**Session:** SOC-013 — deploy-skill audit: argument normalization + `.cursorrules` deployment verification
+**Date:** 2026-08-10
+**Status:** Closed — verified, uncommitted (operator did not request commit)
+
+## SOC-013 summary
+
+Operator asked to verify all three deploy skills: any deploy must be able to verify the
+target's `.cursorrules` (variables/paths correct for the current master location and sister
+frameworks), and argument forms must be exactly equivalent with/without `--`
+(`@soc-deploy-basic "/path" update` ≡ `@soc-deploy-basic /path --update`).
+
+Audit found six gaps (evidence in NEXT_SOC SOC-013 row); all fixed:
+
+- **Argument parsing was positional-only** — bare verbs rejected, flag-before-path failed,
+  verb-only in-place forms errored. All three scripts now normalize: verbs ±`--`, path in
+  any position, verb-only = in-place.
+- **No verify capability existed.** New `verify` mode (canonical home:
+  `scripts/soc-deploy-basic.sh`; `soc-deploy-repo.sh verify` delegates) audits
+  `.cursorrules` + `.work.soc/` read-only and exits 1 on hard failures. Every
+  deploy/update/archive now ends with a verify pass — an unverifiable deploy fails loudly.
+- **Fat-client pointer bug:** in-place `soc-deploy-files` wrote `SOC_SOURCE` at the
+  ORIGINAL source, so fat targets behaved thin. Now points at the local `<target>/.ai.soc`;
+  deploy scripts are included in fat copies so targets self-verify/self-update.
+- Live proof on the operator's example target: `verify /mnt/work/Projects/system-erp`
+  (read-only, target NOT modified) flags its pre-0.5.0 stale block (`@session-soc`,
+  `@deploy-basic`) — exactly the class of drift verify exists to catch. Its `SOC_SOURCE`
+  and `.work.soc/` skeleton check out.
+
+One real-world parsing fix came out of the live audit: backtick-quoted pointers
+(`` `SOC_SOURCE=/path` ``) are now stripped before reachability checks.
+
+## SOC-013 verification (2026-08-10)
+
+| Gate | Result |
+|------|--------|
+| `make check-all` | **PASS** — 252/252 pytest (229 before, +23 new), ruff clean, mypy clean, pyright 0/0/0, bandit 0 issues |
+| `touch-scope-verify.sh` | **PASS** (13 files in scope) |
+| `blast-radius-check.sh` | **PASS** — 8 areas, max 8 via touch-scope marker (operator-authorized for this iteration, NOT standing) |
+| `gate-verify.sh` | **PASS** |
+| `framework-verify.sh` | **PASS** (all smoke checks incl. deploy scripts) |
+| Live verify of system-erp | **RAN (read-only)** — correctly reports 1 stale-handle failure; target untouched |
+
+## SOC-013 open / carryover
+
+- **Uncommitted** — no commit requested, nothing committed.
+- **system-erp's stale SOC block remains stale** — flagged by verify; fixing it means
+  running `@soc-deploy-basic update` + a rules-aware merge IN THAT PROJECT, which requires
+  an operator request there. Not done here (DLP: no cross-project writes without request).
+- **U-SOC-06/08 live E2E scan** still outstanding (needs Docker + LLM key); unchanged.
+- Clone mode in soc-deploy-repo does not auto-verify (target is a fresh checkout of the
+  committed tree — same content that verify passes on the master); operator can run
+  `soc-deploy-repo verify <path>` after clone. Listed so a future session can revisit.
+
+---
+
+## Previous session (SOC-012)
+
 **Session:** SOC-012 — independent verification of the uncommitted SOC-011 diff, plus fixes
 **Date:** 2026-07-27
 **Status:** Closed — verified, uncommitted (operator did not request commit)

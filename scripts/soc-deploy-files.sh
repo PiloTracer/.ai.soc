@@ -7,12 +7,25 @@
 # by construction, not a hand-maintained exclude list.
 #
 # Then strips skill-level intentional omissions (.github/, .gitignore,
-# .gitattributes, .cursorrules, deploy scripts).
+# .gitattributes, .cursorrules).
 #
 # Default = NO-OVERWRITE: existing files in the target are skipped (target-side
-# customizations are preserved by construction). Use --force for the legacy
-# idempotent-overwrite behavior, or --update to additionally emit a candidate
+# customizations are preserved by construction). Use force for the legacy
+# idempotent-overwrite behavior, or update to additionally emit a candidate
 # list of existing-but-differing files for agent-driven rules-aware merge.
+#
+# Argument normalization: verbs accept an optional `--` prefix and may appear
+# in any position relative to the target path. The following are exactly
+# equivalent:
+#   soc-deploy-files.sh /path/to/target update
+#   soc-deploy-files.sh /path/to/target --update
+#   soc-deploy-files.sh --update /path/to/target
+# Verbs without a path operate in-place (target = current directory).
+#
+# The in-place direction chains the .work.soc/ + .cursorrules scaffold via
+# soc-deploy-basic.sh, which writes SOC_SOURCE pointing at the LOCAL deployed
+# copy (<target>/.ai.soc) — fat-client deployments are self-contained — and
+# ends with a verification pass of the target's .cursorrules.
 #
 # Source resolution: SOC_ROOT is derived from this script's location, so the
 # script can be invoked from a TARGET directory using an external source .ai.soc:
@@ -20,24 +33,38 @@
 # Override the source with SOC_SOURCE=/abs/path/.ai.soc if needed.
 #
 # Usage:
-#   bash scripts/soc-deploy-files.sh <target-path>              # no-overwrite (skip existing)
-#   bash scripts/soc-deploy-files.sh <target-path> --force      # overwrite existing (legacy)
-#   bash scripts/soc-deploy-files.sh <target-path> --update     # no-overwrite + emit merge candidates
+#   bash scripts/soc-deploy-files.sh <target-path>               # no-overwrite (skip existing)
+#   bash scripts/soc-deploy-files.sh <target-path> force         # overwrite existing (legacy)
+#   bash scripts/soc-deploy-files.sh [target-path] update        # no-overwrite + emit merge candidates
 #   SOC_SOURCE=/path/.ai.soc bash scripts/soc-deploy-files.sh <target-path>
 #
 set -euo pipefail
 
-RAW_TARGET="${1:?Usage: $0 <target-path> [--force|--update]}"
-shift || true
+# --- Argument normalization --------------------------------------------------
+# Verbs with or without `--`, in any position relative to the target path.
+RAW_TARGET=""
 MODE="skip"
 while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --force)   MODE="force" ;;
-    --update)  MODE="update" ;;
-    *) echo "ERROR: unknown flag: $1" >&2; exit 1 ;;
+  arg="$1"; shift
+  word="${arg#--}"
+  case "$word" in
+    update) MODE="update" ;;
+    force)  MODE="force" ;;
+    *)
+      if [[ "$arg" == --* ]]; then
+        echo "ERROR: unknown flag: $arg" >&2
+        echo "Usage: $0 [<target-path>] [update|force] (optional -- prefix)" >&2
+        exit 1
+      fi
+      if [[ -n "$RAW_TARGET" ]]; then
+        echo "ERROR: multiple target paths given: '$RAW_TARGET' and '$arg'" >&2
+        exit 1
+      fi
+      RAW_TARGET="$arg"
+      ;;
   esac
-  shift
 done
+RAW_TARGET="${RAW_TARGET:-.}"
 
 # Source .ai.soc root: explicit override wins, else derive from script location.
 if [[ -n "${SOC_SOURCE:-}" ]]; then
@@ -48,7 +75,7 @@ fi
 
 # Resolve target: if path ends with .ai.soc, use as-is; otherwise append .ai.soc
 if [[ "$RAW_TARGET" == *.ai.soc ]]; then
-  DEST_DIR="$RAW_TARGET"
+  DEST_DIR="$(cd "$RAW_TARGET" 2>/dev/null && pwd || echo "$RAW_TARGET")"
 else
   DEST_DIR="${RAW_TARGET}/.ai.soc"
 fi
@@ -86,7 +113,9 @@ if [[ -d "$DEST_DIR" ]]; then
 fi
 
 # Build copy list: files git sees (tracked + untracked-not-ignored).
-SKILL_EXCLUDE_REGEX='^(\.github/|\.gitignore$|\.gitattributes$|\.cursorrules$|scripts/soc-deploy-files\.sh$|scripts/soc-deploy-basic\.sh$|scripts/soc-deploy-repo\.sh$)'
+# Deploy scripts ARE included so a fat-client target can self-verify and
+# self-update ($SOC_SOURCE/scripts/... resolves locally).
+SKILL_EXCLUDE_REGEX='^(\.github/|\.gitignore$|\.gitattributes$|\.cursorrules$)'
 
 TMP_LIST="$(mktemp)"
 MERGE_CANDS="$(mktemp)"
@@ -140,17 +169,20 @@ echo ""
 echo "=== Done: files deployed to $DEST_DIR ==="
 echo ""
 
-if [[ "$RAW_TARGET" == "." || "$RAW_TARGET" == "$PWD" ]]; then
-  REPO_ROOT="$(cd "$PARENT" && pwd)"
-  SOC_SOURCE="$SOC_ROOT" bash "$SOC_ROOT/scripts/soc-deploy-basic.sh" . \
+# In-place direction (target is cwd): chain the .work.soc/ + .cursorrules
+# scaffold. soc-deploy-basic detects the local skills copy and writes
+# SOC_SOURCE pointing at it (fat-client = self-contained), then verifies.
+TARGET_ROOT="$(cd "$PARENT" && pwd)"
+if [[ "$RAW_TARGET" == "." || "$TARGET_ROOT" == "$PWD" ]]; then
+  REPO_ROOT="$TARGET_ROOT" SOC_SOURCE="$SOC_ROOT" bash "$SOC_ROOT/scripts/soc-deploy-basic.sh" . \
     > /tmp/soc-deploy-files-scaffold.$$.log 2>&1 || { cat /tmp/soc-deploy-files-scaffold.$$.log; rm -f /tmp/soc-deploy-files-scaffold.$$.log; exit 1; }
-  grep -E '(===|cursorrules:|work:|SOC block|Done:)' /tmp/soc-deploy-files-scaffold.$$.log | sed 's/^/  scaffold: /' || true
+  grep -E '(===|cursorrules:|work:|SOC block|Done:|verify|OK:|FAIL:|WARN:)' /tmp/soc-deploy-files-scaffold.$$.log | sed 's/^/  scaffold: /' || true
   rm -f /tmp/soc-deploy-files-scaffold.$$.log
   SCAFFOLD_DONE=1
 fi
 
 if [[ -n "${SCAFFOLD_DONE:-}" ]]; then
-  echo "  Scaffold: .work.soc/ + SOC block in .cursorrules (via soc-deploy-basic)"
+  echo "  Scaffold: .work.soc/ + SOC block in .cursorrules (SOC_SOURCE → local .ai.soc)"
   echo "  Next: @soc-session start"
 else
   echo "Next steps in target project:"

@@ -46,8 +46,9 @@
 | Full repo (git/archive) | — | `@soc-deploy-repo clone - /path/to/project` |
 | Update existing | `@soc-deploy-basic update` or `@soc-deploy-files update` | — |
 | Check deploy status | `@soc-deploy-basic status` | `@soc-deploy-files status` |
+| Verify deploy (audit `.cursorrules`) | `@soc-deploy-basic verify` | `@soc-deploy-basic verify /path/to/project` |
 
-Source `.ai.soc` is never modified. Only the target receives changes.
+Source `.ai.soc` is never modified. Only the target receives changes. Verbs accept an optional `--` prefix and may appear before or after the path (`@soc-deploy-basic /path update` ≡ `@soc-deploy-basic /path --update`). Every deploy/update ends with a `verify` pass.
 
 ---
 

@@ -1,37 +1,28 @@
-# Release 0.5.0 — declared touch scope
+# SOC-013 — declared touch scope
 # One allowed path prefix per line. Trailing / allows everything under it.
-# Operator-authorized iteration (same-message request): verify the SOC skill
-# rename (deploy-* / session-soc → soc-deploy-* / soc-session), fix gate
-# bugs, and commit+push everything as release 0.5.0. Spans docs, scripts,
-# skills, templates, and quick guides by nature of the rename.
+# Operator-authorized iteration (same-message request 2026-08-10): verify/audit
+# the deploy skills (soc-deploy-basic/-files/-repo), normalize argument forms
+# (verb with/without `--`, path in any position), add `.cursorrules` deployment
+# verification (SOC_SOURCE, skill handles, skeleton, sister frameworks), and
+# resolve gaps found. Spans scripts, skills, templates, tests, and SOC docs by
+# nature of the task.
 #
-# Protected files: pyproject.toml is listed here ONLY because the operator
-# explicitly requested the 0.5.0 version bump in the current message
-# (per-case approval, not standing). All other protected files
-# (Makefile, .pre-commit-config.yaml, .github/, Containers/Dockerfile,
-# .env*) remain out of scope.
+# Protected files remain OUT of scope (pyproject.toml, Makefile,
+# .pre-commit-config.yaml, uv.lock, .github/, Containers/Dockerfile, .env*).
 #
-# Blast-radius authorization for THIS release iteration (operator,
-# 2026-08-06, same-message "commit and push all changes as version 0.5.0"):
-# the rename touches 10 top-level areas (.cursorrules, .gitignore, .quick/,
-# .work.soc/, START_HERE.md, pyproject.toml, uv.lock, scripts/, skills/,
-# templates/).
-# Supersedes the earlier standing 4-area grant for this iteration only.
-# Remove this marker line to restore the default-2 limit immediately.
-# BLAST_RADIUS_MAX_AREAS: 10
-strix/
-tests/
+# Blast-radius authorization for THIS iteration (operator, 2026-08-10,
+# same-message "verify all deploy skills ... resolve any gaps or issues"):
+# the task touches 8 top-level areas (scripts/, skills/, templates/, tests/,
+# .quick/, .cursorrules, START_HERE.md, .work.soc/). Remove this marker line to
+# restore the default-2 limit immediately.
+# BLAST_RADIUS_MAX_AREAS: 8
 scripts/
-NOTICE
 skills/
 templates/
-START_HERE.md
-.cursorrules
-.gitignore
-pyproject.toml
-uv.lock
+tests/
 .quick/
+.cursorrules
+START_HERE.md
 .work.soc/plans/
 .work.soc/context/
-.work.soc/reports/
 .work.soc/touch-scope
