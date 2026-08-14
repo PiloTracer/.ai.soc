@@ -1,8 +1,10 @@
 # `.work.soc/` — Security Operations project memory
 
+**Status:** Active · **Needs:** nothing — reference document
+
 **Purpose:** All **project-specific** SOC artifacts: license analysis, threat models, compliance reviews, risk assessments, security posture plans, and session handoff.
 
-**Agnostic** process (skills, standards, concepts, guides) lives under **`.ai.soc/`** only.
+**Agnostic** process (skills, scripts, templates) lives under **`.ai.soc/`** only.
 
 ## Layout
 
@@ -42,4 +44,6 @@ If this tree was created empty, run from repo root:
 bash .ai.soc/templates/bootstrap.sh
 ```
 
-Or invoke `@soc-bootstrap init`.
+Or invoke `@soc-deploy-basic update`.
+
+Next action: none — reference document

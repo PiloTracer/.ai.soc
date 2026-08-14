@@ -280,7 +280,11 @@ All mandatory checks (1–4, 6–7) are **pass**. If any mandatory **fail**, fix
 
 ### Principles reminder (3 bullets max)
 <from .cursorrules — not a full paste>
+
+Next: nothing - session open; begin the task under "Pick up here"
 ```
+
+Form B instead when the operator must approve or answer something before work can start — enumerate it under `**Needs your approval:**` / `**Needs your answer:**` + one `**Next step:**`, per the Operator handoff contract.
 
 ---
 
@@ -337,6 +341,8 @@ Classify the working tree:
 
 ### No files written
 This mode is read-only: HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC, and `.work.soc/active-ref` are **not** modified. To open a session bookend, run `@soc-session start`.
+
+Next: nothing - context loaded
 ```
 
 ### Anti-patterns (context)
@@ -429,7 +435,11 @@ Same as [C4b](#c4b--git-actions-modifiers-only) — mode-dependent default scope
 **Git:** committed \<sha\> | push \<remote/branch\> result
 
 **Session:** still open — no HANDOFF_SOC or NEXT_SOC changes.
+
+Next: nothing - commit recorded; session stays open
 ```
+
+Form B instead when the operator must approve or answer something (e.g. leftover out-of-scope paths, missing task ref) — enumerate it in the close per the Operator handoff contract.
 
 ---
 
@@ -620,7 +630,11 @@ rm -f .work.soc/active-ref
 
 ### Next session should
 <one line from NEXT_SOC.md>
+
+Next: nothing - session closed
 ```
+
+Form B instead when follow-ups require operator approval or answers (owner actions, out-of-scope paths to commit, unresolved failures) — enumerate them under `**Needs your approval:**` / `**Needs your answer:**` + one `**Next step:**`, per the Operator handoff contract. The `### Follow-ups` / `### Next session should` sections are report content and never substitute for the close.
 
 ---
 

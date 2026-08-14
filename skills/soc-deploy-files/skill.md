@@ -25,6 +25,8 @@ Two-direction deploy of the `.ai.soc` framework into a target project so the pro
 
 **Canonical path:** `.ai.soc/skills/soc-deploy-files/skill.md` · **Shell:** `.ai.soc/scripts/soc-deploy-files.sh`
 
+**Operator handoff:** every response that ends a turn follows the [Operator handoff contract](../SKILL_DEPENDENCIES.md#operator-handoff-contract) — terse output; approvals under `**Needs your approval:**` citing `path:L<n>`; questions numbered under `**Needs your answer:**`; exactly one `**Next step:**` command; one line when nothing is needed (Form A). Decisions and questions never mixed; empty sections omitted.
+
 **Security invariant:** The script enumerates files via `git ls-files --cached --others --exclude-standard` from the **source** `.ai.soc` repo root, so anything `.gitignore` excludes (credentials, private context, `tmp/`, …) is never copied — enforced by construction, not a hand-maintained list. The source must be a git repo with `.ai.soc/` as its root.
 
 **Source not modified.** soc-deploy-files only writes to the **target**. The source `.ai.soc` is read-only.
@@ -101,8 +103,7 @@ After I1 (no-overwrite copy) the script prints a **merge candidate list**: every
 | Class | Merge rule |
 |-------|------------|
 | Skills (`skills/<id>/skill.md`) | Append new sections; update shared sections; never drop target-only verbs/tables |
-| Standards (`standards/*.md`) | Append new sections; update shared text; preserve dated overrides |
-| Framework docs (README, concepts, etc.) | Append new sections; update shared paragraphs; preserve target examples |
+| Framework docs (README, etc.) | Append new sections; update shared paragraphs; preserve target examples |
 | Templates (`templates/**`) | Prefer source version (framework-owned); if target edited intentionally, keep target + record |
 | Scripts (`scripts/**`) | Prefer source version (mechanical); overwrite → record in report |
 
@@ -141,3 +142,5 @@ After I1 (no-overwrite copy) the script prints a **merge candidate list**: every
 ```text
 @soc-session start
 ```
+
+End every copy/update/status report with the Operator handoff close (Form A `Next: …` or Form B `**Needs your approval:**` / `**Needs your answer:**` / `**Next step:**`) per `skills/SKILL_DEPENDENCIES.md`. Any operator-required decision (merge candidates, `--force` confirmation) must ALSO appear in the closing block, enumerated with `path:line`, not only in the report body.

@@ -1,5 +1,7 @@
 # HANDOFF_SOC — Security OS session boundary
 
+**Status:** Active · **Needs:** nothing | <decision or review the operator owes, one line>
+
 ## Session status
 
 **Open:** -
@@ -30,9 +32,9 @@ End with **`@soc-session close`** (add `commit` / `commit push` only when reques
 
 | If the task touches… | Read first |
 |----------------------|------------|
-| Security testing / pentesting | `.ai.soc/standards/*testing*`, Strix documentation |
-| License / compliance | `.ai.soc/standards/*compliance*` |
-| Threat model | `.ai.soc/standards/*threat-model*` |
+| Security testing / pentesting | `skills/soc-director/skill.md`, Strix documentation |
+| License / compliance | Analysis template in `.work.soc/analysis/README.md` |
+| Threat model | Analysis template in `.work.soc/analysis/README.md` (STRIDE) |
 | New SOC plan | `.work.soc/plans/NEXT_SOC.md` |
 
 ---
@@ -58,3 +60,9 @@ End with **`@soc-session close`** (add `commit` / `commit push` only when reques
 | ID | Summary | Blocks |
 |----|---------|--------|
 | - | | |
+
+---
+
+## Next action
+
+`@soc-session start`

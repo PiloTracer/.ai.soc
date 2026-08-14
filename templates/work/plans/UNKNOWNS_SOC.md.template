@@ -1,6 +1,6 @@
 # UNKNOWNS_SOC — SOC unknowns registry
 
-**Updated:** YYYY-MM-DD · **Maintained by:** soc-bootstrap / soc-assessment
+**Status:** Active · **Updated:** YYYY-MM-DD · **Needs:** answers to Open rows | **Maintained by:** soc-session
 
 | ID | Question / blocker | Blocks | Owner | Status |
 |----|-------------------|--------|-------|--------|
@@ -11,3 +11,9 @@
 | Date | Reviewer | Action |
 |------|----------|--------|
 | YYYY-MM-DD | bootstrap | Initial template |
+
+---
+
+## Next action
+
+<one action that unblocks the highest-priority Open row, or `Next action: none — no open unknowns`>

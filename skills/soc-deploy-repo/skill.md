@@ -20,6 +20,8 @@ Deploys the entire `.ai.soc` repository (including `.git/`, `.github/`, `.gitign
 
 **Canonical path:** `.ai.soc/skills/soc-deploy-repo/skill.md` · **Shell:** `.ai.soc/scripts/soc-deploy-repo.sh`
 
+**Operator handoff:** every response that ends a turn follows the [Operator handoff contract](../SKILL_DEPENDENCIES.md#operator-handoff-contract) — terse output; approvals under `**Needs your approval:**` citing `path:L<n>`; questions numbered under `**Needs your answer:**`; exactly one `**Next step:**` command; one line when nothing is needed (Form A). Decisions and questions never mixed; empty sections omitted.
+
 **Contrast with `soc-deploy-files`:** `soc-deploy-repo` includes VCS artifacts. Use `@soc-deploy-files copy` when you only need the `.ai.soc/` directory without git history or `.github/`.
 
 ---
@@ -91,5 +93,7 @@ Deploys the entire `.ai.soc` repository (including `.git/`, `.github/`, `.gitign
 @soc-deploy-basic
 @soc-session start
 ```
+
+End every clone/archive/status/verify report with the Operator handoff close (Form A `Next: …` or Form B `**Needs your approval:**` / `**Needs your answer:**` / `**Next step:**`) per `skills/SKILL_DEPENDENCIES.md`. When a command is required, carry exactly one in `**Next step:**` — the immediate one (`@soc-deploy-basic` after a copy, `@soc-session start` once deployed).
 
 **OpenCode:** Security OS does not ship `opencode.json`. When co-installed with Agent OS, skills are registered in the parent `.ai/opencode.json`.

@@ -258,6 +258,8 @@ When deployed as a thin-client (via `@soc-deploy-basic`), the `.cursorrules` car
 
 **Sessions:** `@soc-session` — opens and closes SOC sessions
 
+**Reports:** every SOC skill response closes per the Operator handoff contract in `skills/SKILL_DEPENDENCIES.md` (resolved via `$SOC_SOURCE` in thin-client mode) — Form A single line when nothing is needed, otherwise Form B (`**Needs your approval:**` / `**Needs your answer:**` / `**Next step:**`).
+
 ### SOC runtime
 
 | Action | Command |
@@ -289,7 +291,7 @@ Full detail: see **Data Loss Prevention** below (fat-client) or this invariant w
 
 - `pyproject.toml` (dependencies, devDependencies, build config)
 - `Makefile` (build/test/lint targets)
-- `Containers/Dockerfile` (base image, runtime deps)
+- `containers/Dockerfile` (base image, runtime deps)
 - `.github/workflows/*` (CI/CD pipeline)
 - `.pre-commit-config.yaml`
 - `.env*` (except `.env.example`)
@@ -415,6 +417,7 @@ Task and ticket refs (e.g. `PROJ-456`, `PROJ-T-23`) are the primary key that lin
 - Be concise. Surface blockers early.
 - Label uncertainty explicitly.
 - Distinguish: confirmed facts, inferences, proposals.
+- **Operator handoff (mandatory):** every response that ends a turn closes per `skills/SKILL_DEPENDENCIES.md` § Operator handoff contract — terse output; approvals under `**Needs your approval:**` citing `path:L<n>`; questions numbered under `**Needs your answer:**`; exactly one `**Next step:**` command; one line (Form A) when no input is needed. Decisions and questions never mixed; empty sections omitted.
 
 ---
 

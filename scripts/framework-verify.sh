@@ -37,6 +37,54 @@ while IFS= read -r d; do
 done < <(find "$SOC_ROOT/skills" -mindepth 1 -maxdepth 1 -type d ! -name '.*' | sort)
 ok "${skill_count} skills present"
 
+note "Clarity contracts (operator handoff)"
+if grep -q '^## Operator handoff contract' "$SOC_ROOT/skills/SKILL_DEPENDENCIES.md"; then
+  ok "SKILL_DEPENDENCIES.md has Operator handoff contract"
+else
+  die "skills/SKILL_DEPENDENCIES.md missing '## Operator handoff contract'"
+fi
+while IFS= read -r d; do
+  id="$(basename "$d")"
+  if grep -q "Operator handoff" "$d/skill.md" 2>/dev/null; then
+    ok "skills/${id} references Operator handoff contract"
+  else
+    die "skills/${id}/skill.md missing Operator handoff contract reference"
+  fi
+done < <(find "$SOC_ROOT/skills" -mindepth 1 -maxdepth 1 -type d ! -name '.*' | sort)
+
+note "Clarity contracts (document clarity)"
+if grep -q '^## Document clarity contract' "$SOC_ROOT/skills/SKILL_DEPENDENCIES.md"; then
+  ok "SKILL_DEPENDENCIES.md has Document clarity contract"
+else
+  die "skills/SKILL_DEPENDENCIES.md missing '## Document clarity contract'"
+fi
+DOC_GENERATING="soc-session"
+for id in $DOC_GENERATING; do
+  if grep -q "Document clarity" "$SOC_ROOT/skills/${id}/skill.md" 2>/dev/null; then
+    ok "skills/${id} references Document clarity contract"
+  else
+    die "skills/${id}/skill.md (doc-generating) missing Document clarity contract reference"
+  fi
+done
+note "Doc template headers (Status/Needs + Next action)"
+tpl_errors=0
+for t in templates/work/context/HANDOFF_SOC.md.template \
+  templates/work/plans/NEXT_SOC.md.template \
+  templates/work/plans/UNKNOWNS_SOC.md.template \
+  templates/work/analysis/README.md.template \
+  templates/work/README.md.template; do
+  if [[ -f "$SOC_ROOT/$t" ]]; then
+    grep -q "Status:" "$SOC_ROOT/$t" && grep -q "Needs:" "$SOC_ROOT/$t" \
+      && ok "$t carries Status/Needs header" \
+      || { die "$t missing Status/Needs header"; tpl_errors=$((tpl_errors + 1)); }
+    grep -qE '^## Next action$|^Next action: none' "$SOC_ROOT/$t" \
+      && ok "$t carries Next action" \
+      || { die "$t missing '## Next action'"; tpl_errors=$((tpl_errors + 1)); }
+  else
+    die "missing $t"
+  fi
+done
+
 note "Change-safety gate scripts"
 for check in touch-scope-verify blast-radius-check gate-verify; do
   script="${SOC_ROOT}/scripts/${check}.sh"

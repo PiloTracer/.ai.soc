@@ -1,5 +1,7 @@
 # `.work.soc/analysis/` — SOC analysis artifacts
 
+**Status:** Active · **Needs:** nothing — reference document
+
 **Purpose:** License audits, threat models, compliance reviews, vulnerability assessments, and penetration test reports.
 
 ## Naming convention
@@ -24,6 +26,7 @@ Examples:
 **Date:** YYYY-MM-DD
 **Scope:** <what was analyzed>
 **Status:** draft | review | final
+**Needs:** <decision/review the reader owes, one line> | nothing
 
 ## Summary
 
@@ -42,4 +45,10 @@ Examples:
 ## Recommendations
 
 1. …
+
+## Next action
+
+<exactly one action in exact syntax, or `Next action: none — <reason>`>
 ```
+
+Next action: none — reference document

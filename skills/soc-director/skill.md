@@ -4,6 +4,8 @@
 
 Run `.ai.soc` penetration testing against a target and deliver findings.
 
+**Operator handoff:** every response that ends a turn follows the [Operator handoff contract](../SKILL_DEPENDENCIES.md#operator-handoff-contract) — terse output; approvals under `**Needs your approval:**` citing `path:L<n>`; questions numbered under `**Needs your answer:**`; exactly one `**Next step:**` command; one line when nothing is needed (Form A). Decisions and questions never mixed; empty sections omitted.
+
 ## Usage
 
 ```
@@ -59,7 +61,7 @@ Reports land at `$PWD/strix_runs/<run-name>/`:
 | `vulnerabilities.csv` | Spreadsheet |
 | `run.json` | Run metadata |
 
-After the scan completes, the agent reads `penetration_test_report.md` and `vulnerabilities.csv` and presents a summary to the user.
+After the scan completes, the agent reads `penetration_test_report.md` and `vulnerabilities.csv` and presents a summary to the user. End the summary with the Operator handoff close (Form A `Next: …` or Form B `**Needs your approval:**` / `**Needs your answer:**` / `**Next step:**`) per `skills/SKILL_DEPENDENCIES.md` — findings requiring an operator decision are enumerated in the close, not buried in the summary.
 
 ## Prerequisites
 

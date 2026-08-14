@@ -4,8 +4,8 @@ description: >-
   Thin-client bootstrap of .ai.soc into a target project. Copies ONLY the
   minimal scaffold — .cursorrules SOC block (with SOC_SOURCE pointer to the
   source .ai.soc), .work.soc/ skeleton (HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC,
-  README, analysis, dirs). Framework assets (skills, standards, concepts,
-  scripts, templates) are NOT copied; the agent resolves them from the source
+  README, analysis, dirs). Framework assets (skills, scripts, templates)
+  are NOT copied; the agent resolves them from the source
   .ai.soc at runtime per SOC_SOURCE pointer. Use soc-deploy-basic (default),
   soc-deploy-basic update, soc-deploy-basic status, or soc-deploy-basic - source <path>
   / soc-deploy-basic - target <path>. Never modifies the source.
@@ -19,16 +19,18 @@ description: >-
 
 # soc-deploy-basic
 
-Thin-client deploy of the `.ai.soc` framework. The target project receives only the scaffold it owns (`.cursorrules` SOC block, `.work.soc/`); everything else (skills, standards, concepts, scripts, templates) stays in the **source** `.ai.soc` and is loaded on demand via the `SOC_SOURCE` pointer written into `.cursorrules`.
+Thin-client deploy of the `.ai.soc` framework. The target project receives only the scaffold it owns (`.cursorrules` SOC block, `.work.soc/`); everything else (skills, scripts, templates) stays in the **source** `.ai.soc` and is loaded on demand via the `SOC_SOURCE` pointer written into `.cursorrules`.
 
 **Shell:** `bash <source>/scripts/soc-deploy-basic.sh <target-path> [mode]`
 
 **Canonical path:** `.ai.soc/skills/soc-deploy-basic/skill.md` · **Shell:** `.ai.soc/scripts/soc-deploy-basic.sh`
 
+**Operator handoff:** every response that ends a turn follows the [Operator handoff contract](../SKILL_DEPENDENCIES.md#operator-handoff-contract) — terse output; approvals under `**Needs your approval:**` citing `path:L<n>`; questions numbered under `**Needs your answer:**`; exactly one `**Next step:**` command; one line when nothing is needed (Form A). Decisions and questions never mixed; empty sections omitted.
+
 **Source not modified.** soc-deploy-basic only writes to the **target**. The source `.ai.soc` is read-only.
 
 **Contrast with `soc-deploy-files`:** `soc-deploy-files` = **fat-client** (vendored full `.ai.soc/` into target, skills are local). `soc-deploy-basic` = **thin-client** (skills remote in source). Choose:
-- `soc-deploy-files` — you want skills/standards/concepts versioned inside the project, offline-editable, no external dependency.
+- `soc-deploy-files` — you want the framework files versioned inside the project, offline-editable, no external dependency.
 - `soc-deploy-basic` — you want the project to track the live source framework, share one source of truth across many consumer repos.
 
 ---
@@ -81,7 +83,7 @@ In both scenarios, the source `.ai.soc` is never modified. Only the target recei
 | `.work.soc/analysis/README.md` | `templates/work/analysis/README.md.template` | skip (preserve) |
 | `.work.soc/{assessments,decisions,prompts}/.gitkeep` | created empty | skip (preserve) |
 
-**Explicitly NOT copied (stay in source, loaded at runtime):** `skills/**`, `standards/**`, `concepts/**`, `scripts/**`, `templates/**`, `README.md`, `START_HERE.md`, `.github/`, `.gitignore`, `.gitattributes`.
+**Explicitly NOT copied (stay in source, loaded at runtime):** `skills/**`, `scripts/**`, `templates/**`, `README.md`, `START_HERE.md`, `.github/`, `.gitignore`, `.gitattributes`.
 
 ---
 
@@ -189,6 +191,8 @@ test -d "$(grep -oE 'SOC_SOURCE=[^ ]*' .cursorrules | head -1 | cut -d= -f2-)"
 @soc-session start
 ```
 
+End every bootstrap/update/status/verify report with the Operator handoff close (Form A `Next: …` or Form B `**Needs your approval:**` / `**Needs your answer:**` / `**Next step:**`) per `skills/SKILL_DEPENDENCIES.md`. Any operator-required decision (fat-client leak choice, merge candidates) must ALSO appear in the closing block, enumerated with `path:line`, not only in the report body. When a command is required, carry exactly one in `**Next step:**` — the immediate one.
+
 ---
 
 ## Critical interactions
@@ -204,7 +208,7 @@ test -d "$(grep -oE 'SOC_SOURCE=[^ ]*' .cursorrules | head -1 | cut -d= -f2-)"
 
 ## Anti-patterns
 
-- Copying `skills/`/`standards/`/`concepts/` into the target (defeats thin-client; use `@soc-deploy-files`).
+- Copying `skills/`/`scripts/` into the target (defeats thin-client; use `@soc-deploy-files`).
 - Wholesale-replacing `.cursorrules` or `.work.soc/` files on `update`.
 - Resetting `SOC_SOURCE` to `REPLACE_SOCSOURCE` instead of the resolved path.
 - Running `@soc-deploy-basic` and expecting skills to work offline — thin-client requires the source path to remain reachable.

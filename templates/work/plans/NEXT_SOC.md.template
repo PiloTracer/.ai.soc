@@ -1,6 +1,6 @@
 # NEXT_SOC — SOC planning backlog
 
-**Updated:** YYYY-MM-DD
+**Status:** Active · **Updated:** YYYY-MM-DD · **Needs:** nothing | <decision the operator owes, one line>
 
 ---
 
@@ -26,7 +26,7 @@
 | Priority | Item | Notes |
 |----------|------|-------|
 | **0** | Review `.work.soc/context/HANDOFF_SOC.md` | Orient on current state |
-| **1** | Run first SOC assessment | `@soc-assessment run --target <path>` |
+| **1** | Run first SOC assessment | `@soc-director - scan <target>` |
 | **2** | Verify skills load from source or parent `.ai/` | Run `@soc-session start`; register via parent `.ai/opencode.json` when co-installed |
 
 ---
@@ -57,3 +57,9 @@
 | Task | Completed | Notes |
 |------|-----------|-------|
 ```
+
+---
+
+## Next action
+
+<exactly one action, in exact syntax — the immediate next step from **Recommended next**>

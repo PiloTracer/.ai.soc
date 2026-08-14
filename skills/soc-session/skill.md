@@ -24,6 +24,10 @@ Bookend SOC work sessions so the next chat (or human) can resume without guessin
 
 **Registry:** [`skills/SKILL_DEPENDENCIES.md`](../SKILL_DEPENDENCIES.md).
 
+**Operator handoff:** every response that ends a turn follows the [Operator handoff contract](../SKILL_DEPENDENCIES.md#operator-handoff-contract) — terse output; approvals under `**Needs your approval:**` citing `path:L<n>`; questions numbered under `**Needs your answer:**`; exactly one `**Next step:**` command; one line when nothing is needed (Form A). Decisions and questions never mixed; empty sections omitted.
+
+**Document clarity:** documents this skill writes or maintains (HANDOFF_SOC, NEXT_SOC, UNKNOWNS_SOC) follow the [Document clarity contract](../SKILL_DEPENDENCIES.md#document-clarity-contract) — Status/Needs header, separate decisions/questions lists, exactly one `## Next action`, no leftover scaffolding.
+
 **Canonical path:** `.ai.soc/skills/soc-session/skill.md` · **Invocation examples:** [`reference.md`](reference.md)
 
 **Hard rules:**
@@ -159,6 +163,8 @@ Read-only snapshot. **No** HANDOFF_SOC/NEXT_SOC writes. **No** completion checkl
 **Pick up:** <one line from NEXT_SOC.md>
 **Unanswered:** <count> from UNKNOWNS_SOC.md
 **Owner blockers:** <short list or none>
+
+Next: nothing - read-only snapshot
 ```
 
 Optional: one line on dirty files (no full diff). For full context load, use **start**; for full load **without** writes, use **context**.

@@ -8,7 +8,7 @@
 
 SOC_SOURCE=REPLACE_SOCSOURCE
 
-The agent MUST resolve `.ai.soc/` references from `$SOC_SOURCE` (thin-client mode). When `SOC_SOURCE` is set and readable, read `.ai.soc/skills/<id>/skill.md` from `$SOC_SOURCE/skills/<id>/skill.md`. Skills, standards, concepts, templates, and scripts resolve from the source at runtime. When `SOC_SOURCE` is missing or unreadable, skills resolve locally from this repo's `.ai.soc/` (fat-client mode).
+The agent MUST resolve `.ai.soc/` references from `$SOC_SOURCE` (thin-client mode). When `SOC_SOURCE` is set and readable, read `.ai.soc/skills/<id>/skill.md` from `$SOC_SOURCE/skills/<id>/skill.md`. Skills, templates, and scripts resolve from the source at runtime. When `SOC_SOURCE` is missing or unreadable, skills resolve locally from this repo's `.ai.soc/` (fat-client mode).
 
 **Verify deployment:** `bash $SOC_SOURCE/scripts/soc-deploy-basic.sh verify .` — read-only audit of this `.cursorrules` (SOC_SOURCE correctness/reachability, stale skill handles, `.work.soc/` skeleton, sister frameworks). Exit 0 = coherent. Run after any deploy/update or whenever `SOC_SOURCE` moves.
 
@@ -43,6 +43,8 @@ The agent MUST resolve `.ai.soc/` references from `$SOC_SOURCE` (thin-client mod
 | soc-gateway | Run .ai.soc from source without system install |
 
 **Sessions:** `@soc-session` — opens and closes SOC sessions
+
+**Reports:** every SOC skill response closes per the Operator handoff contract in `skills/SKILL_DEPENDENCIES.md` (resolved via `$SOC_SOURCE` in thin-client mode) — Form A single line when nothing is needed, otherwise Form B (`**Needs your approval:**` / `**Needs your answer:**` / `**Next step:**`).
 
 ### Data Loss Prevention (SOC deploy invariant)
 
