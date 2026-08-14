@@ -18,13 +18,13 @@
 
 ## Fresh start — what the next SOC session should do first
 
-1. Run **`@session-control start`** (from `.ai/`).
-2. Read **`.cursorrules`** (`.ai.soc` section).
+1. Run **`@soc-session start`**.
+2. Read **`.cursorrules`** (SOC section).
 3. Read this file through § Fresh start, then § Open owner actions.
 4. Read `.work.soc/plans/NEXT_SOC.md`.
 5. Read `.work.soc/plans/UNKNOWNS_SOC.md`.
 
-End with **`@session-control close`** (add `commit` / `commit push` only when requested).
+End with **`@soc-session close`** (add `commit` / `commit push` only when requested). For mid-session checkpoints use **`@soc-session commit`** or **`@soc-session commit push`** (no close).
 
 ### Conditional reads
 

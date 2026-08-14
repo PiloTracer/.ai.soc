@@ -1,8 +1,62 @@
 # HANDOFF_SOC — Security OS session state
 
-**Session:** SOC-013 — deploy-skill audit: argument normalization + `.cursorrules` deployment verification
-**Date:** 2026-08-10
-**Status:** Closed — verified, uncommitted (operator did not request commit)
+**Session:** SOC-014 — soc-session parity with `.ai/skills/session-control` + mode-aware commit scope
+**Date:** 2026-08-14
+**Status:** Closed — verified, committed in this close
+
+## SOC-014 summary
+
+Operator asked to make `soc-session` work like `.ai/skills/session-control` — same
+parameters, same behavior — then refined the commit-scope rule: commits from the
+framework source repo cover the full repo (all modified/added/new files); commits from a
+deployed target project cover `.work.soc/` only.
+
+Shipped:
+
+- **`skills/soc-session/skill.md` rewritten** — full verb parity: `start`/`close`/
+  `status`/`context` + standalone `commit`/`commit push` (no close), `close commit
+  [scoped] [push]`, `close push` normalized to commit push. Hard rules ported
+  (shell-git mandatory, message always shown, no `type:` when a ref is known).
+- **`skills/soc-session/reference.md` (new)** — detailed protocols S1–S6 / X1–X3 /
+  M1–M6 / C1–C8, task-ref extraction (HANDOFF_SOC → `.work.soc/active-ref` → registry →
+  branch → last commit → ask once → `type:` fallback), secrets-scan halt, HANDOFF_SOC
+  status templates (template shape + this repo's legacy header shape).
+- **Mode-dependent commit scope** (operator refinement, same message thread): detection
+  = repo root has `skills/soc-session/skill.md` + `scripts/soc-deploy-basic.sh` →
+  framework-mode (full repo, `git add -A` sanctioned); else target-mode (`.work.soc/`
+  only, `git add -A` forbidden). Secrets-scan halt applies in both modes.
+- **Aligned:** `skills/README.md`, `skills/SKILL_DEPENDENCIES.md` (commit verb + gate
+  row), `.quick/session-lifecycle.md`, `.cursorrules` and
+  `templates/cursorrules.soc.snippet.template` skill tables, `START_HERE.md` quick
+  reference, `templates/work/context/HANDOFF_SOC.md.template` (stale
+  `@session-control` handles → `@soc-session`).
+- **SOC-013-fix included in this commit set:** stale-handle verify check in
+  `scripts/soc-deploy-basic.sh` scoped to the SOC block (sister frameworks legitimately
+  use bare `deploy-basic` outside it) + regression test.
+- This very close ran the new protocol (C1→C8, framework-mode staging) — the first live
+  exercise of the rewritten skill.
+
+## SOC-014 verification (2026-08-14)
+
+| Gate | Result |
+|------|--------|
+| `make check-all` | **PASS** — 253/253 pytest (252 before, +1 stale-handle regression test), ruff clean, mypy clean (81 files), pyright clean, bandit 0 issues |
+| `touch-scope-verify.sh` | **PASS** (13 files in scope) |
+| `blast-radius-check.sh` | **PASS** — 8 areas, max 8 via touch-scope marker (operator-authorized for this iteration, NOT standing) |
+| `gate-verify.sh` | **PASS** |
+| `framework-verify.sh` | **PASS** (all smoke checks) |
+
+## SOC-014 open / carryover
+
+- **Live E2E scan** still outstanding (needs Docker + LLM key); U-SOC-06/08 unchanged.
+- **system-erp's stale SOC block** still requires an operator-requested update IN THAT
+  PROJECT (DLP: no cross-project writes without request).
+- soc-session start/context/status verbs exercised statically only; close commit push
+  exercised live by this close.
+
+---
+
+## Previous session (SOC-013)
 
 ## SOC-013 summary
 

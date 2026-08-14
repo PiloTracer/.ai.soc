@@ -61,6 +61,8 @@ Source `.ai.soc` is never modified. Only the target receives changes. Verbs acce
 | Close session | `@soc-session close` |
 | Close + commit | `@soc-session close commit` |
 | Close + commit + push | `@soc-session close commit push` |
+| Commit only (no close) | `@soc-session commit` |
+| Commit + push (no close) | `@soc-session commit push` |
 | Status snapshot | `@soc-session status` |
 | Run SOC tool | `./gateway.sh -t <target>` |
 | Full assessment | `@soc-director - scan <target> [quick\|standard\|deep]` |

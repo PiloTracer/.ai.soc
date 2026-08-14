@@ -1,25 +1,30 @@
-# SOC-013 — declared touch scope
+# SOC-014 — declared touch scope
 # One allowed path prefix per line. Trailing / allows everything under it.
-# Operator-authorized iteration (same-message request 2026-08-10): verify/audit
-# the deploy skills (soc-deploy-basic/-files/-repo), normalize argument forms
-# (verb with/without `--`, path in any position), add `.cursorrules` deployment
-# verification (SOC_SOURCE, skill handles, skeleton, sister frameworks), and
-# resolve gaps found. Spans scripts, skills, templates, tests, and SOC docs by
-# nature of the task.
+# Operator-authorized iteration (same-message request 2026-08-14): make
+# soc-session work like .ai/skills/session-control — same parameters
+# (start/close/status/context + standalone commit/commit push, close commit
+# [scoped] [push]) and consistent behavior/reports, scoped to .work.soc/.
+# Spans the skill itself, skill registry docs, cheat-sheets, templates, and
+# .cursorrules/START_HERE by nature of the task.
+#
+# Also in the dirty tree (carried over, still uncommitted): the post-SOC-013
+# stale-handle scoping fix in scripts/soc-deploy-basic.sh +
+# tests/test_deploy_scripts.py. In scope so the gates see the full diff.
 #
 # Protected files remain OUT of scope (pyproject.toml, Makefile,
 # .pre-commit-config.yaml, uv.lock, .github/, Containers/Dockerfile, .env*).
 #
-# Blast-radius authorization for THIS iteration (operator, 2026-08-10,
-# same-message "verify all deploy skills ... resolve any gaps or issues"):
-# the task touches 8 top-level areas (scripts/, skills/, templates/, tests/,
-# .quick/, .cursorrules, START_HERE.md, .work.soc/). Remove this marker line to
-# restore the default-2 limit immediately.
+# Blast-radius authorization for THIS iteration (operator, 2026-08-14,
+# same-message "make sure the soc-session works similarly to
+# .ai/skills/session-control ... proceed unattended and autonomously"):
+# the diff touches 8 top-level areas (scripts/, tests/, skills/, templates/,
+# .quick/, .cursorrules, START_HERE.md, .work.soc/). Remove this marker line
+# to restore the default-2 limit immediately.
 # BLAST_RADIUS_MAX_AREAS: 8
 scripts/
+tests/
 skills/
 templates/
-tests/
 .quick/
 .cursorrules
 START_HERE.md

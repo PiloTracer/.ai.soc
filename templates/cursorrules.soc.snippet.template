@@ -38,7 +38,7 @@ The agent MUST resolve `.ai.soc/` references from `$SOC_SOURCE` (thin-client mod
 | soc-deploy-basic | Bootstrap `.work.soc/` + SOC source pointer (thin-client) |
 | soc-deploy-files | Copy `.ai.soc/` files into target (fat-client) |
 | soc-deploy-repo | Clone or archive the full `.ai.soc` repo |
-| soc-session | SOC session bookend; start/close/status/context |
+| soc-session | SOC session bookend (start/close/status/context + standalone `commit`/`commit push`); commits scoped to `.work.soc/` in deployed targets (full repo only in the framework source repo) |
 | soc-director | Run penetration tests against targets |
 | soc-gateway | Run .ai.soc from source without system install |
 

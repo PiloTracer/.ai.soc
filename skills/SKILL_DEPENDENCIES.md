@@ -23,6 +23,7 @@
 | **soc-deploy-repo** `status` | - | Read-only |
 | **soc-session** `start` | `{HANDOFF_SOC}` | Recommended |
 | **soc-session** `close` | Prior `start` or dirty tree | - |
+| **soc-session** `commit` / `commit push` | C1 secrets scan pass; invocation names `commit` | Git write; scope: full repo in framework source repo, `.work.soc/` only in targets |
 | **soc-session** `context` | - | Read-only |
 | **soc-session** `status` | - | Read-only |
 | **soc-director** `- <free-text>` | `{HANDOFF_SOC}` readable | Recommended |
@@ -46,7 +47,7 @@ When a gate stops execution:
 | Canonical verb | Meaning | Skills |
 |----------------|---------|--------|
 | `status` | Read-only state | soc-session, soc-director, soc-gateway, soc-deploy-basic |
-| `start` / `close` / `context` | Session lifecycle | soc-session |
+| `start` / `close` / `context` / `commit` | Session lifecycle | soc-session |
 | `bootstrap` / `update` | Deploy lifecycle | soc-deploy-basic |
 | `copy` | File deploy | soc-deploy-files |
 | `clone` / `archive` | Repo deploy | soc-deploy-repo |
