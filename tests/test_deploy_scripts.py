@@ -141,10 +141,27 @@ def test_verify_fails_on_unreachable_soc_source(tmp_path: Path) -> None:
 def test_verify_fails_on_stale_skill_handles(tmp_path: Path) -> None:
     deploy_thin(tmp_path)
     cursorrules = tmp_path / ".cursorrules"
-    cursorrules.write_text(cursorrules.read_text() + "\n**Sessions:** `@session-soc`\n")
+    cursorrules.write_text(
+        cursorrules.read_text().replace(
+            "<!-- SOC_DESIGN_OS_END -->",
+            "**Sessions:** `@session-soc`\n\n<!-- SOC_DESIGN_OS_END -->",
+        )
+    )
     result = run(BASIC, "verify", str(tmp_path))
     assert result.returncode == 1
     assert "stale skill handles" in result.stdout
+
+
+def test_verify_ignores_sister_framework_handles_outside_soc_block(tmp_path: Path) -> None:
+    """Bare `deploy-basic` outside the SOC block (e.g. .ai framework skill) is not stale."""
+    deploy_thin(tmp_path)
+    cursorrules = tmp_path / ".cursorrules"
+    cursorrules.write_text(
+        cursorrules.read_text() + "\n| deploy-basic | Thin-client bootstrap / update |\n"
+    )
+    result = run(BASIC, "verify", str(tmp_path))
+    assert result.returncode == 0
+    assert "no stale skill handles" in result.stdout
 
 
 def test_verify_ignores_soc_prefixed_handles(tmp_path: Path) -> None:
@@ -173,7 +190,12 @@ def test_verify_fails_deploy_when_target_goes_stale(tmp_path: Path) -> None:
     """A deploy/update whose end state does not verify must exit non-zero."""
     deploy_thin(tmp_path)
     cursorrules = tmp_path / ".cursorrules"
-    cursorrules.write_text(cursorrules.read_text() + "\n`@deploy-files` legacy handle\n")
+    cursorrules.write_text(
+        cursorrules.read_text().replace(
+            "<!-- SOC_DESIGN_OS_END -->",
+            "`@deploy-files` legacy handle\n\n<!-- SOC_DESIGN_OS_END -->",
+        )
+    )
     result = run(BASIC, str(tmp_path), "--update")
     assert result.returncode == 1
     assert "verification FAILED" in result.stderr

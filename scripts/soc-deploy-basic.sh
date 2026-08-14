@@ -127,8 +127,10 @@ verify_target() {
   fi
 
   # 2. Stale skill handles (pre-0.5.0 naming: session-soc / deploy-* without soc- prefix)
+  # Scoped to the SOC block: sister frameworks (e.g. .ai) legitimately still
+  # use bare `deploy-basic` skill names elsewhere in .cursorrules.
   local stale
-  stale="$(grep -oE '(^|[^A-Za-z-])(session-soc|deploy-basic|deploy-files|deploy-repo)' "$CURS_DEST" 2>/dev/null | sort -u | tr -d '[:space:]' | paste -sd, - || true)"
+  stale="$(sed -n '/SOC_DESIGN_OS_BEGIN/,/SOC_DESIGN_OS_END/p' "$CURS_DEST" 2>/dev/null | grep -oE '(^|[^A-Za-z-])(session-soc|deploy-basic|deploy-files|deploy-repo)' | sort -u | tr -d '[:space:]' | paste -sd, - || true)"
   if [[ -n "$stale" ]]; then
     echo "  FAIL: stale skill handles in SOC block ($stale) — pre-0.5.0 names; run update + rules-aware merge"
     errors=$((errors + 1))
