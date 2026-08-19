@@ -210,8 +210,9 @@ verify_target() {
   if [[ -n "$work_root" ]]; then
     echo "  info: WORK_ROOT → $work_root"
     # Sister frameworks: the six .ai.<fw> slots (legacy + family naming via
-    # sister-discovery.sh) + the Agent OS anchor (.ai / pilo.ai.logicbison).
-    local fw fw_dir ag src_root
+    # sister-discovery.sh). The parent orchestrator (.ai / pilo.ai.logicbison)
+    # is deliberately NOT checked — child frameworks don't track the parent.
+    local fw fw_dir src_root
     src_root="${SOC_SOURCE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
     source "$(dirname "${BASH_SOURCE[0]}")/sister-discovery.sh"
     for fw in $FRAMEWORK_SLOTS; do
@@ -221,9 +222,6 @@ verify_target() {
       else
         echo "  info: sister framework .ai.$fw: framework not installed here"
       fi
-    done
-    for ag in .ai pilo.ai.logicbison; do
-      [[ -f "$work_root/$ag/skills/README.md" ]] && echo "  info: sister framework $ag: installed"
     done
   fi
 

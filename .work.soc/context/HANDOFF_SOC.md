@@ -49,10 +49,20 @@ explicitly for `.ai.soc` (this repo) — treated as a slip and applied here.
 | `blast-radius-check.sh` | **PASS** — 10 areas, max 10 via touch-scope marker (operator-authorized for SOC-015, NOT standing) |
 | `gate-verify.sh` | **PASS** |
 | `framework-verify.sh` | **PASS** (all smoke checks) |
-| Doc step-6 smoke | **PASS** — `sister_names ui $PWD` → `.ai.ui`; all six `../.ai.<fw>/skills/README.md` present; live deploy to `/tmp/smoke-soc` lists six slots + `pilo.ai.logicbison` anchor, verify exit 0 |
+| Doc step-6 smoke | **PASS** — `sister_names ui $PWD` → `.ai.ui`; all six `../.ai.<fw>/skills/README.md` present; live deploy smoke lists the six slots, verify exit 0 (anchor line removed by post-release correction) |
 
 ## SOC-015 open / carryover
 
+- **Operator correction (2026-08-19, post-release):** the Agent OS anchor check
+  (`.ai` / `pilo.ai.logicbison`) added by soc.md step 3 was **removed** — a child
+  framework does not track/contact the parent orchestrator. Verify now reports
+  only the six sister slots; `docs/homogenization/soc.md` step 3 carries the
+  correction note. Committed as a SOC-015 follow-up.
+- **GitHub Release v0.6.1** created after the initial close (the first close only
+  bumped version strings + README; the Releases panel still showed v0.5.0).
+  Note: local tags `0.6.0`/`v0.6.0`/`v0.6.1`/`v0.6.2` point at upstream Strix
+  commits (fork inheritance), never pushed — the release tag was created
+  server-side on our commit.
 - **Live E2E scan** still outstanding (needs Docker + LLM key); U-SOC-06/08 unchanged.
 - **system-erp's stale SOC block** still requires an operator-requested update IN THAT
   PROJECT (DLP: no cross-project writes without request).

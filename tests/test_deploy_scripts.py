@@ -204,14 +204,13 @@ def test_verify_fails_deploy_when_target_goes_stale(tmp_path: Path) -> None:
 def test_verify_reports_sister_frameworks(tmp_path: Path) -> None:
     result = deploy_thin(tmp_path)
     # Master repo lives next to its sisters: all six .ai.<fw> slots are
-    # reported (installed or not), plus the Agent OS anchor (.ai /
-    # pilo.ai.logicbison) when present.
+    # reported (installed or not). The parent orchestrator (.ai /
+    # pilo.ai.logicbison) is deliberately NOT checked — child frameworks
+    # don't track the parent.
     for s in ("ui", "biz", "soc", "cto", "flutter", "mlt"):
         assert f"sister framework .ai.{s}:" in result.stdout
-    assert (
-        "sister framework .ai: installed" in result.stdout
-        or "sister framework pilo.ai.logicbison: installed" in result.stdout
-    )
+    assert "sister framework .ai: installed" not in result.stdout
+    assert "sister framework pilo.ai.logicbison: installed" not in result.stdout
 
 
 def test_verify_tolerates_backtick_quoted_soc_source(tmp_path: Path) -> None:

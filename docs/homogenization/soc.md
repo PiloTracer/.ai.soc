@@ -42,6 +42,8 @@ Family naming: sisters may also live as `pilo.ai.<fw>.logicbison` — the shared
 Also update the inference bullet (`:88`): "Sibling frameworks (`.ai`, `.ai.ui`, `.ai.biz`) are then `{WORK_ROOT}/<framework>`" → "Sibling frameworks are then `{WORK_ROOT}/<framework>` (list below)."
 
 ### 3. `soc-deploy-basic.sh` — replace the hardcoded sister loop (`:212-221`) with the six-slot lib
+
+> **Correction (operator, 2026-08-19):** the Agent OS anchor loop (`.ai` / `pilo.ai.logicbison`) shown below was **removed after landing** — a child framework does not track/contact the parent orchestrator. Only the six-slot sister loop applies; the anchor `for ag in ...` block must NOT be re-added.
 Replace:
 ```bash
     local fw
