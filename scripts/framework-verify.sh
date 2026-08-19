@@ -22,7 +22,7 @@ git rev-parse --is-inside-work-tree &>/dev/null && ok "inside git work tree" || 
 
 note "Core framework files"
 for f in README.md START_HERE.md templates/bootstrap.sh \
-  scripts/soc-deploy-basic.sh scripts/soc-deploy-files.sh scripts/soc-deploy-repo.sh \
+  scripts/soc-deploy-basic.sh scripts/soc-deploy-files.sh \
   skills/README.md; do
   [[ -f "$SOC_ROOT/$f" ]] && ok "$f" || die "missing $f"
 done
@@ -104,11 +104,6 @@ bash "$SOC_ROOT/scripts/soc-deploy-files.sh" . >/dev/null
 grep -q 'SOC_DESIGN_OS_BEGIN' .cursorrules 2>/dev/null || die "soc-deploy-files in-place missing SOC block in .cursorrules"
 popd >/dev/null
 ok "soc-deploy-files in-place creates .ai.soc/ + .work.soc/ + SOC block"
-
-note "soc-deploy-repo --status"
-bash "$SOC_ROOT/scripts/soc-deploy-repo.sh" --status >/dev/null
-bash "$SOC_ROOT/scripts/soc-deploy-repo.sh" --status "$DF_SMOKE" >/dev/null
-ok "soc-deploy-repo --status reports source + target"
 rm -rf "$DF_SMOKE"
 
 note "soc-deploy-basic thin-client scaffold"

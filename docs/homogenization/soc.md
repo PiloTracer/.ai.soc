@@ -2,6 +2,11 @@
 
 **Status:** Ready · **Needs:** none · **Repo:** `/mnt/work/Projects/.ai.soc` (clean git, `.work/` present)
 
+> **Note (2026-08-19, post-hoc):** `soc-deploy-repo` (script + skill) was removed by
+> operator request after this doc was applied — `scripts/soc-deploy-repo.sh` no longer
+> exists. The "Current state (measured 2026-08-19)" measurements below predate the
+> removal and are kept as the historical record.
+
 Goal: make the deploy skills produce targets whose `.cursorrules` discover all six sisters under both namings — same as the current framework. `.ai.soc` is the only sibling with an **active sister-presence check** — but it is hardcoded to 4 names and legacy-only.
 
 ## Current state (measured 2026-08-19)

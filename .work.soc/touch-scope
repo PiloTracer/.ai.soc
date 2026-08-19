@@ -1,29 +1,38 @@
-# SOC-015 touch scope — homogenization (docs/homogenization/soc.md) + release 0.6.1
-# Operator-authorized 2026-08-19 in-message: apply soc.md steps 1-6, bump release
-# version to 0.6.1, close commit push. Per-message only — NOT standing.
+# SOC-016 touch scope — remove soc-deploy-repo (skill + script) and refresh the
+# framework docs/registries/tests. Operator-authorized 2026-08-19 in-message
+# ("PROCEED WITH ALL NECESSARY CHANGES, GET RID OF deploy-repo!").
+# Per-message only — NOT standing. No git commit/push requested.
 #
-# Protected files included this iteration by explicit operator request
-# ("release version 0.6.1"): pyproject.toml + uv.lock version bump only.
-# Any other protected-file edit must still fail this gate.
-pyproject.toml
-uv.lock
+# No protected files (pyproject.toml, Makefile, containers/, .github/,
+# .pre-commit-config.yaml, .env*) are touched by this iteration.
 
-# Homogenization change set (soc.md steps 1-5)
+# Deletions (explicitly requested in-message)
+skills/soc-deploy-repo/
+scripts/soc-deploy-repo.sh
+
+# Registries + docs
 .cursorrules
-docs/homogenization/
-scripts/sister-discovery.sh
-scripts/soc-deploy-basic.sh
-scripts/install-git-hooks.sh
-skills/soc-deploy-basic/
+START_HERE.md
+skills/README.md
+skills/SKILL_DEPENDENCIES.md
+skills/soc-deploy-files/
 templates/cursorrules.soc.snippet.template
+docs/homogenization/soc.md
+
+# Scripts + tests
+scripts/framework-verify.sh
+scripts/soc-deploy-basic.sh
 tests/test_deploy_scripts.py
 
-# Release visibility
-README.md
-
-# Session bookend files (soc-session close)
+# Scope declaration + session work tree
 .work.soc/
 
-# Operator-authorized for SOC-015 homogenization + release iteration
-# (2026-08-19, this message only). Remove the marker to restore default-2.
-# BLAST_RADIUS_MAX_AREAS: 10
+# Reliability fix: commit-ref-pending bookkeeping must stay untracked
+.gitignore
+
+# Operator-authorized for SOC-016 removal iteration (2026-08-19, this message
+# only): 9 top-level areas (.cursorrules, START_HERE.md, skills/, scripts/,
+# templates/, docs/, tests/, .work.soc/, .gitignore — the last for the
+# commit-ref-pending reliability fix). Remove the marker to restore the
+# standing max-4 (SOC-011-gate).
+# BLAST_RADIUS_MAX_AREAS: 9

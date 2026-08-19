@@ -43,7 +43,6 @@
 |-----------|-------------------|----------------------|
 | Thin-client (scaffold only) | `@soc-deploy-basic - source /path/to/.ai.soc` | `@soc-deploy-basic - target /path/to/project` |
 | Fat-client (full files) | `@soc-deploy-files - source /path/to/.ai.soc` | `@soc-deploy-files copy - /path/to/project` |
-| Full repo (git/archive) | — | `@soc-deploy-repo clone - /path/to/project` |
 | Update existing | `@soc-deploy-basic update` or `@soc-deploy-files update` | — |
 | Check deploy status | `@soc-deploy-basic status` | `@soc-deploy-files status` |
 | Verify deploy (audit `.cursorrules`) | `@soc-deploy-basic verify` | `@soc-deploy-basic verify /path/to/project` |

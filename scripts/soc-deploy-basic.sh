@@ -87,7 +87,7 @@ CURS_DEST="${DEST_ROOT}/.cursorrules"
 # --- Shared: fat/thin detection ----------------------------------------------
 # Fat-client: target owns a local copy of the framework skills, either vendored
 # under <target>/.ai.soc/ (soc-deploy-files) or AS the target itself when the
-# target is a full .ai.soc repo root (soc-deploy-repo / the master repo).
+# target is a full .ai.soc repo root (the master repo).
 LOCAL_SOC=""
 detect_local_soc() {
   LOCAL_SOC=""
@@ -126,13 +126,14 @@ verify_target() {
     errors=$((errors + 1))
   fi
 
-  # 2. Stale skill handles (pre-0.5.0 naming: session-soc / deploy-* without soc- prefix)
+  # 2. Stale/removed skill handles: pre-0.5.0 naming (session-soc / deploy-*
+  # without soc- prefix) plus `soc-deploy-repo` (skill removed 2026-08-19).
   # Scoped to the SOC block: sister frameworks (e.g. .ai) legitimately still
   # use bare `deploy-basic` skill names elsewhere in .cursorrules.
   local stale
-  stale="$(sed -n '/SOC_DESIGN_OS_BEGIN/,/SOC_DESIGN_OS_END/p' "$CURS_DEST" 2>/dev/null | grep -oE '(^|[^A-Za-z-])(session-soc|deploy-basic|deploy-files|deploy-repo)' | sort -u | tr -d '[:space:]' | paste -sd, - || true)"
+  stale="$(sed -n '/SOC_DESIGN_OS_BEGIN/,/SOC_DESIGN_OS_END/p' "$CURS_DEST" 2>/dev/null | grep -oE '(^|[^A-Za-z-])(session-soc|deploy-basic|deploy-files|deploy-repo|soc-deploy-repo)' | sort -u | tr -d '[:space:]' | paste -sd, - || true)"
   if [[ -n "$stale" ]]; then
-    echo "  FAIL: stale skill handles in SOC block ($stale) — pre-0.5.0 names; run update + rules-aware merge"
+    echo "  FAIL: stale skill handles in SOC block ($stale) — pre-0.5.0 names or removed skills (soc-deploy-repo); run update + rules-aware merge"
     errors=$((errors + 1))
   else
     echo "  OK:   no stale skill handles (soc-* naming)"

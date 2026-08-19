@@ -89,3 +89,7 @@ schema.graphql
 
 # Local agent-tooling permission allowlist (session residue, not repo content)
 reasonix.toml
+.reasonix/
+
+# SOC post-commit hook bookkeeping (commit ref metadata; transient, no consumers)
+.work.soc/commit-ref-pending/

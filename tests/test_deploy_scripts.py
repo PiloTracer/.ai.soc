@@ -1,4 +1,4 @@
-"""Tests for the SOC deploy shell scripts (soc-deploy-basic/-files/-repo).
+"""Tests for the SOC deploy shell scripts (soc-deploy-basic/-files).
 
 Covers the SOC-013 contract:
 - argument normalization: verbs with/without ``--``, path in any position,
@@ -19,7 +19,6 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BASIC = REPO_ROOT / "scripts" / "soc-deploy-basic.sh"
 FILES = REPO_ROOT / "scripts" / "soc-deploy-files.sh"
-REPO = REPO_ROOT / "scripts" / "soc-deploy-repo.sh"
 BASH = shutil.which("bash") or "/bin/bash"
 
 
@@ -172,6 +171,22 @@ def test_verify_ignores_soc_prefixed_handles(tmp_path: Path) -> None:
     assert "no stale skill handles" in result.stdout
 
 
+def test_verify_fails_on_removed_soc_deploy_repo_handle(tmp_path: Path) -> None:
+    """`soc-deploy-repo` (skill removed 2026-08-19) inside the SOC block is stale."""
+    deploy_thin(tmp_path)
+    cursorrules = tmp_path / ".cursorrules"
+    cursorrules.write_text(
+        cursorrules.read_text().replace(
+            "<!-- SOC_DESIGN_OS_END -->",
+            "| soc-deploy-repo | Clone or archive the full `.ai.soc` repo |\n"
+            "\n<!-- SOC_DESIGN_OS_END -->",
+        )
+    )
+    result = run(BASIC, "verify", str(tmp_path))
+    assert result.returncode == 1
+    assert "stale skill handles" in result.stdout
+
+
 def test_verify_fails_on_missing_work_skeleton(tmp_path: Path) -> None:
     deploy_thin(tmp_path)
     (tmp_path / ".work.soc/plans/NEXT_SOC.md").unlink()
@@ -261,39 +276,6 @@ def test_files_outbound_copy_does_not_scaffold(tmp_path: Path) -> None:
     assert (target / ".ai.soc/skills/README.md").is_file()
     assert not (target / ".work.soc").exists()
     assert not (target / ".cursorrules").exists()
-
-
-# --- soc-deploy-repo ----------------------------------------------------------
-
-
-def test_repo_status_forms() -> None:
-    for args in [("status",), ("--status",)]:
-        result = run(REPO, *args)
-        assert result.returncode == 0
-        assert "soc-deploy-repo status" in result.stdout
-
-
-def test_repo_verify_delegates_to_basic(tmp_path: Path) -> None:
-    deploy_thin(tmp_path)
-    for args in [("verify", str(tmp_path)), (str(tmp_path), "--verify")]:
-        result = run(REPO, *args)
-        assert result.returncode == 0, f"form {args} failed"
-        assert "verify: all checks passed" in result.stdout
-
-
-def test_repo_archive_deploys_and_verifies(tmp_path: Path) -> None:
-    target = tmp_path / "repo-copy"
-    result = run(REPO, "archive", str(target))
-    assert result.returncode == 0, result.stderr + result.stdout
-    assert (target / ".cursorrules").is_file()
-    assert (target / ".github").is_dir()
-    assert (target / "skills/README.md").is_file()
-    assert not (target / ".git").exists()
-    assert "verify: all checks passed" in result.stdout
-
-
-def test_repo_unknown_mode_errors(tmp_path: Path) -> None:
-    assert run(REPO, "--frobnicate", str(tmp_path)).returncode == 1
 
 
 # --- master repo self-verification --------------------------------------------

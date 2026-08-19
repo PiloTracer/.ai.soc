@@ -31,7 +31,7 @@ Two-direction deploy of the `.ai.soc` framework into a target project so the pro
 
 **Source not modified.** soc-deploy-files only writes to the **target**. The source `.ai.soc` is read-only.
 
-**Contrast with `soc-deploy-repo`:** `soc-deploy-files` copies only the `.ai.soc/` directory (no VCS artifacts). Use `@soc-deploy-repo clone` when you need the full repo including `.git` and `.github/`.
+**Scope:** `soc-deploy-files` copies only the `.ai.soc/` directory (no VCS artifacts, no `.git`). The former `soc-deploy-repo` (full-repo clone/archive) was removed 2026-08-19 — no longer used; deploy via `@soc-deploy-files` or a plain `git clone` of the framework repo.
 
 ---
 

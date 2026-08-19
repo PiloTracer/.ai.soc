@@ -68,8 +68,6 @@ Implements the operator-provided **Documentation Clarity Protocol** (origin: `.w
 | **soc-deploy-basic** `status` | - | Read-only |
 | **soc-deploy-files** `copy` | Target parent dir exists | Required |
 | **soc-deploy-files** `status` | - | Read-only |
-| **soc-deploy-repo** `clone` / `archive` | Target must not exist (clone) or parent exists (archive) | Required |
-| **soc-deploy-repo** `status` | - | Read-only |
 | **soc-session** `start` | `{HANDOFF_SOC}` | Recommended |
 | **soc-session** `close` | Prior `start` or dirty tree | - |
 | **soc-session** `commit` / `commit push` | C1 secrets scan pass; invocation names `commit` | Git write; scope: full repo in framework source repo, `.work.soc/` only in targets |
@@ -99,5 +97,4 @@ When a gate stops execution:
 | `start` / `close` / `context` / `commit` | Session lifecycle | soc-session |
 | `bootstrap` / `update` | Deploy lifecycle | soc-deploy-basic |
 | `copy` | File deploy | soc-deploy-files |
-| `clone` / `archive` | Repo deploy | soc-deploy-repo |
 | `- <free-text>` | Free-text routing | soc-director |
