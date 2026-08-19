@@ -160,7 +160,7 @@ Hard checks (failure → exit 1):
 | `SOC_SOURCE` pointer | Not the `REPLACE_SOCSOURCE` placeholder. **Thin-client:** set, reachable, `$SOC_SOURCE/skills/README.md` present. **Fat-client** (local `.ai.soc/skills/` exists): unset, or pointing at the local copy |
 | `.work.soc/` skeleton | `context/HANDOFF_SOC.md`, `plans/NEXT_SOC.md`, `plans/UNKNOWNS_SOC.md` present |
 
-Soft checks (reported, never fail): SOC block sections present (`SOC context files`, `SOC placeholders`, `SOC skills`, `Data Loss Prevention`) — missing ones mean an older block, suggest `update`; sister frameworks (`.ai`, `.ai.ui`, `.ai.biz`) under the resolved `WORK_ROOT` — reported as `installed` / `framework not installed here`.
+Soft checks (reported, never fail): SOC block sections present (`SOC context files`, `SOC placeholders`, `SOC skills`, `Data Loss Prevention`) — missing ones mean an older block, suggest `update`; sister frameworks (the six `.ai.<fw>` slots — `ui`, `biz`, `cto`, `flutter`, `mlt`, `soc` — via `scripts/sister-discovery.sh`, which resolves both legacy `.ai.<fw>` and family `pilo.ai.<fw>.logicbison` naming) plus the Agent OS anchor (`.ai` / `pilo.ai.logicbison`) under the resolved `WORK_ROOT` — reported as `installed` / `framework not installed here`.
 
 Fat-client pointer rule: when the target owns local skills, `SOC_SOURCE` must be unset or equal `<target>/.ai.soc` so the deployment is self-contained. `update` re-syncs a stale pointer to the intended value (local copy for fat targets, source path for thin targets).
 

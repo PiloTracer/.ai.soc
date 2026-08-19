@@ -12,6 +12,32 @@ The agent MUST resolve `.ai.soc/` references from `$SOC_SOURCE` (thin-client mod
 
 **Verify deployment:** `bash $SOC_SOURCE/scripts/soc-deploy-basic.sh verify .` — read-only audit of this `.cursorrules` (SOC_SOURCE correctness/reachability, stale skill handles, `.work.soc/` skeleton, sister frameworks). Exit 0 = coherent. Run after any deploy/update or whenever `SOC_SOURCE` moves.
 
+### Framework paths
+
+Sister frameworks live as siblings on disk. Paths below are templated with `{WORK_ROOT}` for portability — no tool-specific config needed.
+
+**`{WORK_ROOT}` resolution (in priority order):**
+
+1. If a `WORK_ROOT:` line exists anywhere above this section, use that absolute path verbatim.
+2. Otherwise, infer it as the **parent directory of this repository** (the repo this `.cursorrules` lives in). Sibling frameworks are then `{WORK_ROOT}/<framework>` (list below).
+3. If neither resolves an existing sibling directory, stop routing with a one-line `framework not installed here` message — never silently route into the void.
+
+| Framework | Path | Director |
+|-----------|------|----------|
+| Security OS (`.ai.soc`) | `$SOC_SOURCE` (thin-client source) | `@soc-director` |
+| Agent OS (`.ai`) | `{WORK_ROOT}/.ai` | `@ai-director` |
+| UI Design OS (`.ai.ui`) | `{WORK_ROOT}/.ai.ui` | `@ui-director` |
+| Business OS (`.ai.biz`) | `{WORK_ROOT}/.ai.biz` | `@biz-director` |
+| CTO Professor OS (`.ai.cto`) | `{WORK_ROOT}/.ai.cto` | `@cto-director` |
+| Flutter Agent OS (`.ai.flutter`) | `{WORK_ROOT}/.ai.flutter` | `@flutter-director` |
+| MLT Agent OS (`.ai.mlt`) | `{WORK_ROOT}/.ai.mlt` | `@mlt-director` |
+
+Family naming: sisters may also live as `pilo.ai.<fw>.logicbison` — the shared discovery rule (`$SOC_SOURCE/scripts/sister-discovery.sh`) resolves both forms; family-named sources derive sisters as `<source basename with <fw> inserted before its last .segment>` (`.ai`-prefixed sources resolve `.ai.<fw>` directly).
+
+### Path resolution
+
+x-director and ai-director resolve frameworks from the table above. Substitute `{WORK_ROOT}` per the resolution rules at the top of this section before reading any framework path. Preflight check before routing: verify the framework's `skills/README.md` exists at the declared path. If absent, stop routing with a one-line `framework not installed here` message — never silently route into the void.
+
 ### SOC context files
 
 | File | Purpose |

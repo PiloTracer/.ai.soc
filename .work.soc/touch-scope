@@ -1,0 +1,29 @@
+# SOC-015 touch scope — homogenization (docs/homogenization/soc.md) + release 0.6.1
+# Operator-authorized 2026-08-19 in-message: apply soc.md steps 1-6, bump release
+# version to 0.6.1, close commit push. Per-message only — NOT standing.
+#
+# Protected files included this iteration by explicit operator request
+# ("release version 0.6.1"): pyproject.toml + uv.lock version bump only.
+# Any other protected-file edit must still fail this gate.
+pyproject.toml
+uv.lock
+
+# Homogenization change set (soc.md steps 1-5)
+.cursorrules
+docs/homogenization/
+scripts/sister-discovery.sh
+scripts/soc-deploy-basic.sh
+scripts/install-git-hooks.sh
+skills/soc-deploy-basic/
+templates/cursorrules.soc.snippet.template
+tests/test_deploy_scripts.py
+
+# Release visibility
+README.md
+
+# Session bookend files (soc-session close)
+.work.soc/
+
+# Operator-authorized for SOC-015 homogenization + release iteration
+# (2026-08-19, this message only). Remove the marker to restore default-2.
+# BLAST_RADIUS_MAX_AREAS: 10

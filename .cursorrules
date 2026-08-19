@@ -89,15 +89,20 @@ Sister frameworks live as siblings on disk. Paths below are templated with `{WOR
 **`{WORK_ROOT}` resolution (in priority order):**
 
 1. If a `WORK_ROOT:` line exists anywhere above this section, use that absolute path verbatim.
-2. Otherwise, infer it as the **parent directory of this `.ai.soc` repository** (the repo this `.cursorrules` lives in). Sibling frameworks (`.ai`, `.ai.ui`, `.ai.biz`) are then `{WORK_ROOT}/<framework>`.
+2. Otherwise, infer it as the **parent directory of this `.ai.soc` repository** (the repo this `.cursorrules` lives in). Sibling frameworks are then `{WORK_ROOT}/<framework>` (list below).
 3. If neither resolves an existing sibling directory, stop routing with a one-line `framework not installed here` message — never silently route into the void.
 
 | Framework | Path | Director |
 |-----------|------|----------|
+| Security OS (`.ai.soc`) | *this repository* | `@soc-director` |
 | Agent OS (`.ai`) | `{WORK_ROOT}/.ai` | `@ai-director` |
 | UI Design OS (`.ai.ui`) | `{WORK_ROOT}/.ai.ui` | `@ui-director` |
 | Business OS (`.ai.biz`) | `{WORK_ROOT}/.ai.biz` | `@biz-director` |
-| Security OS (`.ai.soc`) | `{WORK_ROOT}/.ai.soc` | `@soc-director` |
+| CTO Professor OS (`.ai.cto`) | `{WORK_ROOT}/.ai.cto` | `@cto-director` |
+| Flutter Agent OS (`.ai.flutter`) | `{WORK_ROOT}/.ai.flutter` | `@flutter-director` |
+| MLT Agent OS (`.ai.mlt`) | `{WORK_ROOT}/.ai.mlt` | `@mlt-director` |
+
+Family naming: sisters may also live as `pilo.ai.<fw>.logicbison` — the shared discovery rule (`scripts/sister-discovery.sh`) resolves both forms; family-named sources derive sisters as `<source basename with <fw> inserted before its last .segment>` (`.ai`-prefixed sources resolve `.ai.<fw>` directly).
 
 ### Path resolution
 

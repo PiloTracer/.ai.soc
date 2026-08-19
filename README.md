@@ -1,5 +1,7 @@
 # .ai.soc — Security OS
 
+**Version:** 0.6.1
+
 **Autonomous AI security testing framework.** Forked from [Strix](https://github.com/usestrix/strix) by OmniSecure Inc.
 
 .ai.soc agents act like real hackers — they run your code dynamically, find vulnerabilities, and validate them through actual proof-of-concepts. Built for developers and security teams who need fast, accurate security testing.

@@ -2,9 +2,9 @@
 # install-git-hooks.sh — Install SOC OS git hooks alongside existing hooks.
 #
 # Each SOC hook is installed as <hook>.soc (e.g. pre-commit.soc) to coexist
-# with sister frameworks (.ai, .ai.ui, .ai.biz) and the Python pre-commit
-# framework. A dispatcher (.git/hooks/<hook>) is created only when no hook
-# exists yet — existing hooks are never overwritten.
+# with sister frameworks (.ai, .ai.ui, .ai.biz, .ai.cto, .ai.flutter, .ai.mlt)
+# and the Python pre-commit framework. A dispatcher (.git/hooks/<hook>) is
+# created only when no hook exists yet — existing hooks are never overwritten.
 set -euo pipefail
 
 SOC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

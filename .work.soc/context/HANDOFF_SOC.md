@@ -1,5 +1,71 @@
 # HANDOFF_SOC — Security OS session state
 
+**Session:** SOC-015 — homogenization (sister discovery + deploy parity) + release 0.6.1
+**Date:** 2026-08-19
+**Status:** Closed — verified, committed in this close
+
+## SOC-015 summary
+
+Operator asked to apply `docs/homogenization/soc.md` (make deploy skills produce
+targets that discover all six sisters under both legacy and family naming, plus the
+Agent OS orchestrator anchor `../.ai` / `../pilo.ai.logicbison`), then verify the
+whole framework and release 0.6.1.
+
+The change set was already applied in the working tree (steps 1–5 of the doc); this
+session audited it against the doc, fixed the blast-radius marker placement, bumped
+the version, and ran full verification:
+
+- **`scripts/sister-discovery.sh`** (new, copied from `pilo.ai.logicbison`) — shared
+  discovery lib: `FRAMEWORK_SLOTS="ui biz soc cto flutter mlt"`, `sister_names`
+  (legacy `.ai.<fw>` + family `pilo.ai.<fw>.logicbison` with slot-replace),
+  `find_sister_dir` (first candidate with `skills/README.md`).
+- **`.cursorrules` `## Framework paths`** — 7-row table (added `.ai.cto`,
+  `.ai.flutter`, `.ai.mlt`; `.ai.soc` now "*this repository*") + family-naming note.
+- **`scripts/soc-deploy-basic.sh` `verify_target()`** — hardcoded 4-name sister loop
+  replaced with the six-slot lib loop + Agent OS anchor check (`.ai` /
+  `pilo.ai.logicbison`). Info-level, never fails the deploy (unchanged policy).
+- **`templates/cursorrules.soc.snippet.template`** — new `### Framework paths`
+  section (7 rows, `$SOC_SOURCE` for the SOC row) so deployed targets can route
+  cross-framework.
+- **`scripts/install-git-hooks.sh`** prose — now lists all seven frameworks.
+- **`tests/test_deploy_scripts.py`** — sister-framework test now asserts all six
+  slots are reported + anchor detected.
+- **Orchestrator anchor check (operator instruction):** `../.ai` absent,
+  `../pilo.ai.logicbison` present with `skills/README.md` — anchor resolves; no
+  operator value needed.
+- **Release 0.6.1:** `pyproject.toml` + `uv.lock` 0.5.0 → 0.6.1 (protected files,
+  explicitly authorized in-message for this release only), `README.md` gained a
+  `**Version:** 0.6.1` line so the release shows on the GitHub main page.
+
+Note: the operator message said ".ai.mlt OS Framework" but the referenced doc is
+explicitly for `.ai.soc` (this repo) — treated as a slip and applied here.
+
+## SOC-015 verification (2026-08-19)
+
+| Gate | Result |
+|------|--------|
+| `make check-all` | **PASS** — 253/253 pytest, ruff clean, mypy clean (81 files), pyright 0/0/0, bandit 0 issues |
+| `touch-scope-verify.sh` | **PASS** (12 files in scope; pyproject/uv.lock included via explicit release authorization) |
+| `blast-radius-check.sh` | **PASS** — 10 areas, max 10 via touch-scope marker (operator-authorized for SOC-015, NOT standing) |
+| `gate-verify.sh` | **PASS** |
+| `framework-verify.sh` | **PASS** (all smoke checks) |
+| Doc step-6 smoke | **PASS** — `sister_names ui $PWD` → `.ai.ui`; all six `../.ai.<fw>/skills/README.md` present; live deploy to `/tmp/smoke-soc` lists six slots + `pilo.ai.logicbison` anchor, verify exit 0 |
+
+## SOC-015 open / carryover
+
+- **Live E2E scan** still outstanding (needs Docker + LLM key); U-SOC-06/08 unchanged.
+- **system-erp's stale SOC block** still requires an operator-requested update IN THAT
+  PROJECT (DLP: no cross-project writes without request).
+- Old fat-client targets deployed before this change lack `sister-discovery.sh` in
+  their local copy — a self-verify there runs the OLD script (no source line), so no
+  hard failure; `soc-deploy-files update` in the target syncs the lib.
+- `docs/homogenization/soc.md` checklist item "Nothing committed/staged" is superseded
+  by the operator's `close commit push` instruction in this session.
+
+---
+
+## Previous session (SOC-014)
+
 **Session:** SOC-014 — soc-session parity with `.ai/skills/session-control` + mode-aware commit scope
 **Date:** 2026-08-14
 **Status:** Closed — verified, committed in this close
